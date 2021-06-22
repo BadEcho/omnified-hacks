@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "framework"
+		},
+		{
+			"path": "targets"
+		}
+	],
+	"settings": {
+		"files.exclude": {
+			"**/cedebug.txt": true,
+			"**/log.txt": true
+		}
+	}
+}
