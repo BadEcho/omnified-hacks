@@ -41,7 +41,7 @@ The Omnified hacking framework and its game-targeted hacks use the following str
   * **nameOfGame/**: This would be the directory for the game acting as an Omnified target, containing all the code specific to that game.
     * **nameOfGame.ct**: The .CT file for the Omnified game. This is what we double click on and then check the **OMNIFY** check box in, in order to Omnify the loaded game's process. This is a direct copy from the Omnified template .CT file containing all the boilerplate code required to load the framework and target hacking code. The only things specific to the game in this file are the game's data structures discovered through reverse engineering. 
     * **hooks.asm**: Game specific hooks for the target Omnified game. These generally consist of the initiation points for the various game-neutral Omnified systems. Sometimes they also include Omnified-flavored enhancements specific to that game as well.
-* **legacyTargets/**: This is a historical archive of all Omnified games that were created prior to the advent of Omnified 2.0. More information about these targets can be found on the [legacyTargets](https://github.com/BadEcho/omnified-hacks/tree/master/legacyHacks) page in source control.
+* **legacyTargets/**: This is a historical archive of all Omnified games that were created prior to the advent of Omnified 2.0. More information about these targets can be found on the [legacyTargets](https://github.com/BadEcho/omnified-hacks/tree/master/legacyTargets) page in source control.
 
 ## More Information About Omnified Games
 
