@@ -29,7 +29,7 @@ registersymbol(playerStaminaValue)
 
 getPlayer:
     pushf 
-    // Isolate the player root structure through pinpointed comparing of comparable comaprables.
+    // Isolate the player root structure through pinpointed comparing of comparable comparables.
     // This is a constant identifying another statistic that is constantly queried for.
     // We're going to piggyback off of it in order to find the statistics we care about.
     cmp r14,0x1CB
