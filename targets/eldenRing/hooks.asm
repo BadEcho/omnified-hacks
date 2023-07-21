@@ -12,7 +12,7 @@
 
 // Gets the player's information.
 // UNIQUE AOB: 24 48 8B 08 66 0F 6E 89 38 01 00 00
-define(omniPlayerHook,"start_protected_game.exe"+5A4822)
+define(omniPlayerHook,"start_protected_game.exe"+5A4C02)
 
 assert(omniPlayerHook,66 0F 6E 89 38 01 00 00)
 alloc(getPlayer,$1000,omniPlayerHook)
@@ -102,7 +102,7 @@ getPlayerReturn:
 
 // Gets the horsey's information.
 // UNIQUE AOB: 8B 8A 38 01 00 00 89 4B
-define(omniHorseyHook,"start_protected_game.exe"+64C1FE)
+define(omniHorseyHook,"start_protected_game.exe"+64CFDE)
 
 assert(omniHorseyHook,8B 8A 38 01 00 00)
 alloc(getHorsey,$1000,omniHorseyHook)
@@ -148,7 +148,7 @@ getHorseyReturn:
 // rcx: The target entity's vital structure.
 // r8 is 0 and r11 is 1 when we're dead.
 // UNIQUE AOB: 89 81 38 01 00 00 E8
-define(omniDeathCounterHook,"start_protected_game.exe"+4340E2)
+define(omniDeathCounterHook,"start_protected_game.exe"+434222)
 
 assert(omniDeathCounterHook,89 81 38 01 00 00)
 alloc(incrementDeathCounter,$1000,omniDeathCounterHook)
@@ -191,7 +191,7 @@ deathCounter:
 // ebx: Two's complemented damage value being added to the health.
 // [rsp+50] | {[rsp]+8A} Source of damage's instance struct.
 // UNIQUE AOB: 03 9F 38 01 00 00 85
-define(omnifyApocalypseHook,"start_protected_game.exe"+43376F)
+define(omnifyApocalypseHook,"start_protected_game.exe"+4338AF)
 
 assert(omnifyApocalypseHook,03 9F 38 01 00 00)
 alloc(initiateApocalypse,$1000,omnifyApocalypseHook)
@@ -242,11 +242,11 @@ initiatePlayerApocalypse:
     cmp rsi,0
     jle abortApocalypse
     mov rax,[rsi]
-    // Lower 2 bytes of damage over time status effect sources is 0x40C0.
-    cmp ax,0x40C0
+    // Lower 2 bytes of damage over time status effect sources is 0x7120.
+    cmp ax,0x7120
     je abortApocalypse
-    // Fall damage is a "special effect", which has lower 2 bytes of 0x70F8.    
-    cmp ax,0x70F8 
+    // Fall damage is a "special effect", which has lower 2 bytes of 0xA158.    
+    cmp ax,0xA158 
     je abortApocalypse
     // Load the player's maximum health as the next parameter.
     mov rax,[rdi+13C]
@@ -314,7 +314,7 @@ teleportitisDisplacementX:
 // Player's Havok character proxy can be found by looking at offset 0x88 of the chracter's proxy which itself 
 // is found at [playerLocation+0x98]
 // UNIQUE AOB: F3 45 0F 5C D3 0F
-define(omnifyPredatorHook,"start_protected_game.exe"+1856340)
+define(omnifyPredatorHook,"start_protected_game.exe"+1858EF0)
 
 assert(omnifyPredatorHook,F3 45 0F 5C D3)
 alloc(initiatePredator,$1000,omnifyPredatorHook)
@@ -427,7 +427,7 @@ threatDistance:
 // used here aren't actually retrievable at the point of matrix transformation, where we're applying the scales.
 // [rcx+8]: Player/EnemyIns, used as the identifying address.
 // UNIQUE AOB: 44 8B 81 38 01 00 00 C7
-define(omnifyAbomnificationHook,"start_protected_game.exe"+4354EC)
+define(omnifyAbomnificationHook,"start_protected_game.exe"+43562C)
 
 assert(omnifyAbomnificationHook,44 8B 81 38 01 00 00)
 alloc(initiateAbomnification,$1000,omnifyAbomnificationHook)
@@ -472,7 +472,7 @@ abomnifyMorphStepsResultLower:
 // xmm4: Height
 // xmm3: Depth
 // UNIQUE AOB: 0F 29 3C 07 0F 29 64 07 10
-define(omnifyApplyHumanAbomnificationHook,"start_protected_game.exe"+B12E0A)
+define(omnifyApplyHumanAbomnificationHook,"start_protected_game.exe"+B159FA)
 
 assert(omnifyApplyHumanAbomnificationHook,0F 29 3C 07 0F 29 64 07 10)
 alloc(applyHumanAbomnification,$1000,omnifyApplyHumanAbomnificationHook)
@@ -547,7 +547,7 @@ applyHumanAbomnificationReturn:
 // [rcx+18]: The entity-identifying model transformation matrix array, unique to each 
 // entity whose model is being rendered.
 // UNIQUE AOB: 48 8B 41 18 41 0F 29 04 02
-define(omnifyNonhumanAbomnificationHook,"start_protected_game.exe"+160513C)
+define(omnifyNonhumanAbomnificationHook,"start_protected_game.exe"+1607CEC)
 
 assert(omnifyNonhumanAbomnificationHook,48 8B 41 18 41 0F 29 04 02)
 alloc(initiateNonhumanAbomnification,$1000,omnifyNonhumanAbomnificationHook)
@@ -586,7 +586,7 @@ initiateNonhumanAbomnificationReturn:
 // xmm2: Depth
 // UNIQUE AOB: 0F 29 07 0F 29 4F 10 0F 29 57 20 EB
 // check out [rsp+88] for an identifying address
-define(omnifyApplyNonhumanAbomnificationHook,"start_protected_game.exe"+B11D83)
+define(omnifyApplyNonhumanAbomnificationHook,"start_protected_game.exe"+B14973)
 
 assert(omnifyApplyNonhumanAbomnificationHook,0F 29 07 0F 29 4F 10)
 alloc(applyNonhumanAbomnification,$1000,omnifyApplyNonhumanAbomnificationHook)
@@ -647,7 +647,7 @@ applyNonhumanAbomnificationReturn:
 
 // Makes Omni's life a little easier (i.e., I learn things faster).
 // UNIQUE AOB: F3 0F 59 C1 F3 0F 2C F8 48
-define(omnifyFastLearner,"start_protected_game.exe"+6444B3)
+define(omnifyFastLearner,"start_protected_game.exe"+645293)
 
 assert(omnifyFastLearner,F3 0F 59 C1 F3 0F 2C F8)
 alloc(learnFast,$1000,omnifyFastLearner)
@@ -684,7 +684,7 @@ learningX:
 // [playerGameData+0xFF]: Byte value that determines whether we're Rune Arced or not.
 // playerGameData+0x100]: If this is 0 after dying (and when this runs) then Rune Arc status won't be removed.
 // UNIQUE AOB: 80 B9 00 01 00 00 00 74 09
-define(omnifyRuneArcLossHook,"start_protected_game.exe"+25C750)
+define(omnifyRuneArcLossHook,"start_protected_game.exe"+25C880)
 
 assert(omnifyRuneArcLossHook,80 B9 00 01 00 00 00)
 alloc(runeArcDiceRoll,$1000,omnifyRuneArcLossHook)
