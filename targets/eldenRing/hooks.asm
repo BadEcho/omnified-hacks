@@ -21,7 +21,9 @@ alloc(playerLocation,8)
 alloc(playerVitals,8)
 alloc(playerGameData,8)
 alloc(playerHavokProxy,8)
+alloc(teleporting,8)
 
+registersymbol(teleporting)
 registersymbol(playerHavokProxy)
 registersymbol(playerGameData)
 registersymbol(player) 
@@ -88,7 +90,8 @@ skipInteriorGridPurge:
     subss xmm0,xmm1
     movss xmm1,[rcx+78]
     addss xmm0,xmm1
-    movss [rcx+78],xmm0  
+    movss [rcx+78],xmm0      
+    mov [teleporting],1
 getPlayerCleanup:    
     pop rcx
     pop rbx
@@ -318,7 +321,7 @@ teleportitisDisplacementX:
 // rdi: Target's Havok chracter proxy.
 // xmm6: Movement offsets being applied to current coordinates to form desired location coordinates.
 // xmm0: Current working location coordinates.
-// Player's Havok character proxy can be found by looking at offset 0x88 of the chracter's proxy which itself 
+// Player's Havok character proxy can be found by looking at offset 0x88 of the character's proxy which itself 
 // is found at [playerLocation+0x98]
 // UNIQUE AOB: F3 45 0F 5C D3 0F
 define(omnifyPredatorHook,"start_protected_game.exe"+1858EF0)
@@ -328,10 +331,14 @@ alloc(initiatePredator,$1000,omnifyPredatorHook)
 alloc(playerSpeedX,8)
 alloc(playerVerticalX,8)
 alloc(identityValue,8)
+alloc(verticalMovementTicksToSkip,8)
+alloc(initialVerticalMovementTicksToSkip,8)
 
 registersymbol(identityValue)
 registersymbol(playerVerticalX)
 registersymbol(playerSpeedX)
+registersymbol(verticalMovementTicksToSkip)
+registersymbol(initialVerticalMovementTicksToSkip)
 registersymbol(omnifyPredatorHook)
 
 initiatePredator:
@@ -390,6 +397,26 @@ initiatePredatorUpdateOffsets:
 applyPlayerSpeed:    
     movss xmm1,[playerSpeedX]    
     movss xmm2,[playerVerticalX]    
+    // Check if we're currently recalling somewhere.
+    mov rcx,teleporting
+    cmp [rcx],1
+    je freezeVerticalMovement
+    // RIP quantityOfTicksToFreezeVerticalMovementWhileRecalling. 
+    // "I know him well." -clayfreeman
+    cmp [verticalMovementTicksToSkip],0
+    jg eraseVerticalMultiplier
+    jmp continueApplyPlayerSpeed
+freezeVerticalMovement:
+    // If recalling, we may need to prevent our player from falling into the abyss
+    // in the event that our new location's ground hasn't loaded yet.
+    mov [rcx],0
+    // Delay updates to the y-coordinate for a number of ticks.
+    mov rbx,[initialVerticalMovementTicksToSkip]
+    mov [verticalMovementTicksToSkip],rbx
+eraseVerticalMultiplier:    
+    xorps xmm2,xmm2
+    dec [verticalMovementTicksToSkip]
+continueApplyPlayerSpeed:    
     movlhps xmm1,xmm2    
     shufps xmm1,xmm1,8
     mulps xmm6,xmm1
@@ -427,6 +454,9 @@ aggroDistance:
 
 threatDistance:
     dd (float)3.5
+
+initialVerticalMovementTicksToSkip:
+    dd #240
 
 
 // Initiates the Abomnification system for humanoids.
@@ -743,7 +773,9 @@ unregistersymbol(playerLocation)
 unregistersymbol(player)
 unregistersymbol(playerGameData)
 unregistersymbol(playerHavokProxy)
+unregistersymbol(teleporting)
 
+dealloc(teleporting)
 dealloc(playerHavokProxy)
 dealloc(playerGameData)
 dealloc(player)
@@ -795,7 +827,11 @@ unregistersymbol(omnifyPredatorHook)
 unregistersymbol(playerSpeedX)
 unregistersymbol(playerVerticalX)
 unregistersymbol(identityValue)
+unregistersymbol(verticalMovementTicksToSkip)
+unregistersymbol(initialVerticalMovementTicksToSkip)
 
+dealloc(initialVerticalMovementTicksToSkip)
+dealloc(verticalMovementTicksToSkip)
 dealloc(identityValue)
 dealloc(playerVerticalX)
 dealloc(playerSpeedX)
