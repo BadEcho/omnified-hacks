@@ -43,6 +43,13 @@ getPlayer:
     // The root player instance structure is found at 0x8, from there we will be mapping everything else.
     mov rax,[rcx+8]
     mov [player],rax
+    // [player+0x38]: 4 byte map address of player: [AreaId]-[GridColumn]-[GridRow]-[Unknown]
+    // By forcing the grid column and row to 0, we compel the game to calculate the absolute map coordinates for us.
+    // We only want to do this for exterior areas, however (AreaId == 0x1F if interior).
+    cmp byte ptr [rax+0x3B],0x1F
+    je skipInteriorGridPurge
+    and [rax+0x38],0xFF000000
+skipInteriorGridPurge:
     // The collection of all modules for the player is found at 0x190 in the player root structure.
     mov rbx,[rax+190]
     // The physics module, containing the character's location, is at 0x68 in the module collection.
