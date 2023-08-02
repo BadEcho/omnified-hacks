@@ -47,9 +47,9 @@ getPlayer:
     mov [player],rax
     // [player+0x38]: 4 byte map address of player: [AreaId]-[GridColumn]-[GridRow]-[Unknown]
     // By forcing the grid column and row to 0, we compel the game to calculate the absolute map coordinates for us.
-    // We only want to do this for exterior areas, however (AreaId == 0x1F if interior).
-    cmp byte ptr [rax+0x3B],0x1F
-    je skipInteriorGridPurge
+    // We only want to do this for exterior areas, however (AreaId <= 0x22 if interior).
+    cmp byte ptr [rax+0x3B],0x22
+    jle skipInteriorGridPurge
     and [rax+0x38],0xFF000000
 skipInteriorGridPurge:
     // The collection of all modules for the player is found at 0x190 in the player root structure.
