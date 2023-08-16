@@ -205,7 +205,9 @@ define(omnifyApocalypseHook,"start_protected_game.exe"+4338AF)
 
 assert(omnifyApocalypseHook,03 9F 38 01 00 00)
 alloc(initiateApocalypse,$1000,omnifyApocalypseHook)
+alloc(fallDamageImmune,8)
 
+registersymbol(fallDamageImmune)
 registersymbol(omnifyApocalypseHook)
 
 initiateApocalypse:
@@ -257,7 +259,7 @@ initiatePlayerApocalypse:
     je abortApocalypse
     // Fall damage is a "special effect", which has lower 2 bytes of 0xA158.    
     cmp ax,0xA158 
-    je abortApocalypse
+    je checkFallDamageImmunity
     // Load the player's maximum health as the next parameter.
     mov rax,[rdi+13C]
     cvtsi2ss xmm0,eax
@@ -282,6 +284,11 @@ initiateEnemyApocalypse:
     jne abortApocalypse    
     call executeEnemyApocalypse
     jmp initiateApocalypseUpdateDamage
+checkFallDamageImmunity:
+    cmp [fallDamageImmune],1
+    jne abortApocalypse
+    // If fall damage immune, we just zero-out the damage register.
+    xor ebx,ebx
 abortApocalypse:
     // Adjust the stack to account for the two common parameters that we don't need
     // to actually push.
@@ -312,6 +319,9 @@ omnifyApocalypseHook:
     nop 
 initiateApocalypseReturn:
 
+
+fallDamageImmune:
+    dd 0
 
 teleportitisDisplacementX:
     dd (float)4.0
@@ -815,7 +825,9 @@ omnifyApocalypseHook:
     db 03 9F 38 01 00 00
 
 unregistersymbol(omnifyApocalypseHook)
+unregistersymbol(fallDamageImmune)
 
+dealloc(fallDamageImmune)
 dealloc(initiateApocalypse)
 
 
