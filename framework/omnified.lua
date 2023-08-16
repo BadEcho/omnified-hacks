@@ -160,6 +160,7 @@ function registerOmnification(targetAssemblyFilePath, pathToFramework)
 		
 		statusTimer.Interval = 400
 		statusTimer.OnTimer = function()
+			-- Check for the Fatalis exposure.
 			local fatalisState 
 				= readInteger("fatalisState")
 				
@@ -187,7 +188,7 @@ function registerOmnification(targetAssemblyFilePath, pathToFramework)
 
 				fatalisTimer.Interval = fatalisDuration
 				fatalisTimer.OnTimer = function()
-					writeInteger("fatalisState",3)		
+					writeInteger("fatalisState", 3)		
 					writeInteger("logPlayerApocalypse", 1)
 					local previousPlayerDamageX =  readFloat("basePlayerDamageX")
 
@@ -198,6 +199,31 @@ function registerOmnification(targetAssemblyFilePath, pathToFramework)
 					fatalisTimer.Enabled = false
 					fatalisTimer.Destroy()
 					fatalisTimer = nil
+				end
+			end
+
+			-- Check for a recent teleportitis event, and respond with a cooldown period.
+			local teleported
+				= readInteger("teleported")
+
+			if teleported == 1 then
+				-- Create a cooldown period by disabling teleportitis and setting up a timer
+				-- to reenable it.
+				writeInteger("teleported", 0)
+				writeInteger("disableTeleportitis", 1)
+
+				if teleportitisCooldownTimer == nil then
+					teleportitisCooldownTimer = createTimer(getMainForm())
+					
+					local cooldownPeriod = readInteger("teleportitisCooldownPeriod")
+					teleportitisCooldownTimer.Interval = cooldownPeriod * 60000
+					teleportitisCooldownTimer.OnTimer = function()
+						writeInteger("disableTeleportitis", 0)
+
+						teleportitisCooldownTimer.Enabled = false
+						teleportitisCooldownTimer.Destroy()
+						teleportitisCooldownTimer = nil
+					end					
 				end
 			end
 		end

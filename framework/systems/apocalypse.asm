@@ -75,6 +75,7 @@ alloc(totalDamageToPlayer,8)
 alloc(disableTeleportitis,8)
 alloc(disableMurder,8)
 alloc(murderIsAfoot,8)
+alloc(teleportitisCooldownPeriod,8)
 
 registersymbol(executePlayerApocalypse)
 registersymbol(logPlayerApocalypse)
@@ -110,6 +111,7 @@ registersymbol(coordinatesAreDoubles)
 registersymbol(disableTeleportitis)
 registersymbol(disableMurder)
 registersymbol(murderIsAfoot)
+registersymbol(teleportitisCooldownPeriod)
 
 executePlayerApocalypse:
     // Backing up a few SSE registers we'll be using to
@@ -588,6 +590,8 @@ disableMurder:
 murderIsAfoot:
     dd 0
 
+teleportitisCooldownPeriod:
+    dd 2
   
 // Enemy Apocalypse System Function
 // [rsp+58]: Target health value
@@ -964,7 +968,9 @@ unregistersymbol(executePlayerApocalypse)
 unregistersymbol(disableTeleportitis)
 unregistersymbol(disableMurder)
 unregistersymbol(murderIsAfoot)
+unregistersymbol(teleportitisCooldownPeriod)
 
+dealloc(teleportitisCooldownPeriod)
 dealloc(logPlayerApocalypse)
 dealloc(teleported)
 dealloc(teleportedX)
