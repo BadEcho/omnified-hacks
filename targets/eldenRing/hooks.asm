@@ -326,6 +326,9 @@ fallDamageImmune:
 teleportitisDisplacementX:
     dd (float)4.0
 
+teleportitisCooldownPeriod:
+    dd 5
+
 
 // Initiates the Predator system.
 // rdi: Target's Havok chracter proxy.
@@ -771,6 +774,44 @@ runeArcLossResultLower:
 runeArcLossResultUpper:
     dd #4
 
+
+//  Implements the Kill Switch™
+// [rax+138]: Creature's health being polled
+define(omnifyKillSwitch,"start_protected_game.exe"+4100D8)
+
+assert(omnifyKillSwitch,8B B8 38 01 00 00)
+alloc(activateKillSwitch,$1000,omnifyKillSwitch)
+alloc(killSwitchEnabled,8)
+
+registersymbol(killSwitchEnabled)
+registersymbol(omnifyKillSwitch)
+
+activateKillSwitch:
+    pushf
+    cmp [killSwitchEnabled],1
+    jne activateKillSwitchOriginalCode
+    push rbx
+    mov rbx,playerVitals
+    cmp [rbx],rax    
+    pop rbx
+    je activateKillSwitchOriginalCode
+    // Everything that falls will DIE.
+    mov [rax+138],0    
+activateKillSwitchOriginalCode:
+    popf
+    mov edi,[rax+00000138]
+    jmp activateKillSwitchReturn
+
+omnifyKillSwitch:
+    jmp activateKillSwitch
+    nop 
+activateKillSwitchReturn:
+
+
+killSwitchEnabled:
+    dd 0
+
+
 [DISABLE]
 
 // Cleanup of omniPlayerHook
@@ -914,3 +955,13 @@ dealloc(runeArcLossResultLower)
 dealloc(runeArcLossResultUpper)
 dealloc(runeArcDiceRoll)
 
+
+// Cleanup of omnifyKillSwitch
+omnifyKillSwitch:
+    db 8B B8 38 01 00 00
+
+unregistersymbol(omnifyKillSwitch)
+unregistersymbol(killSwitchEnabled)
+
+dealloc(killSwitchEnabled)
+dealloc(activateKillSwitch)
