@@ -12,6 +12,7 @@
 
 // Gets the player's root structure.
 // Actor values blob is at [player]+0x2A0
+// Effective health is located at [player]+0x3B8 -- it is stored as an offset (seems to be either 0 or a negative value, which you add to the maximum health to get your health).
 // Maximum health is located by matching a known ActorValueInfo pointer to an entry at actor values blob.
 // Need to figure out how to get discriminator value!
 // UNIQUE AOB: 48 8B 01 48 8B FA 33 DB FF 90 E0
