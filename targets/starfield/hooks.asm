@@ -97,13 +97,55 @@ omniPlayerHook:
     nop 
 getPlayerReturn:
 
+
+// Gets the player's location information.
+// This only polls the player's location, no filtering needed.
+// rax: Player location structure (+0x50).
+// The structure address is off by 0x50 (x-coordinate is normally at playerLocation+0x80), so adjustment is needed.
+define(omniPlayerLocationHook,"Starfield.exe"+C52546)
+
+assert(omniPlayerLocationHook,0F 58 78 30 0F B7 C7)
+alloc(getPlayerLocation,$1000,omniPlayerLocationHook)
+alloc(playerLocation,8)
+
+registersymbol(playerLocation)
+registersymbol(omniPlayerLocationHook)
+
+getPlayerLocation:
+    pushf
+    push rax
+    sub rax,0x50
+    mov [playerLocation],rax
+    pop rax
+getPlayerLocationOriginalCode:
+    popf
+    addps xmm7,[rax+30]
+    movzx eax,di
+    jmp getPlayerLocationReturn
+
+omniPlayerLocationHook:
+    jmp getPlayerLocation
+    nop 2
+getPlayerLocationReturn:
+
+
 [DISABLE]
+
+// Cleanup of omniPlayerLocationHook
+omniPlayerLocationHook:
+    db 0F 58 78 30 0F B7 C7
+
+unregistersymbol(omniPlayerLocationHook)
+unregistersymbol(playerLocation)
+
+dealloc(playerLocation)
+dealloc(getPlayerLocation)
 
 // Cleanup of omniPlayerHook
 omniPlayerHook:
     db 48 8B 01 48 8B FA
 
-unregistersymbol(omniPlayerHook)
+unregistersymbol(omniPlayerHook)    
 unregistersymbol(player)
 unregistersymbol(playerMaxHealth)
 
