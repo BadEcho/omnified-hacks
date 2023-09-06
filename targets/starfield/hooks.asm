@@ -150,6 +150,54 @@ omniPlayerHook:
 getPlayerReturn:
 
 
+// Gets changes to the player's oxygen level.
+// [rax+rdx*4]: Address of oxygen offset being updated.
+// xmm1: New oxygen offset.
+// Unlike the player hook, which runs all the time, this only runs when active changes are occurring to the player's oxygen.
+// Despite this, when it does run, it executes far more frequently than the player hook. 
+// Because of this, our display value for oxygen, which we export as a statistic, also needs to be updated here so that all 
+// changes are reported. 
+// UNIQUE AOB: C5 FA 11 0C 90 * * * * EB
+define(omniPlayerOxygenChangeHook,"Starfield.exe"+24BCEDD)
+
+assert(omniPlayerOxygenChangeHook,C5 FA 11 0C 90)
+alloc(getPlayerOxygenChange,$1000,omniPlayerOxygenChangeHook)
+
+registersymbol(omniPlayerOxygenChangeHook)
+
+getPlayerOxygenChange:
+    pushf
+    sub rsp,10
+    movdqu [rsp],xmm0
+    push rbx
+    push rcx
+    // Unknown at this time if this procedure updates vitals in addition to oxygen, checking if it is the player's oxygen being changed to be sure.
+    mov rcx,player
+    mov rbx,[rcx]
+    lea rcx,[rbx+3C4]
+    lea rbx,[rax+rdx*4]
+    cmp rcx,rbx
+    jne getPlayerOxygenChangeExit
+    mov rbx,playerMaxOxygen
+    movss xmm0,[playerMaxOxygen]
+    addss xmm0,xmm1
+    mov rbx,playerOxygen
+    movss [rbx],xmm0    
+getPlayerOxygenChangeExit:
+    pop rcx
+    pop rbx
+    movdqu xmm0,[rsp]
+    add rsp,10
+getPlayerOxygenChangeOriginalCode:
+    popf
+    vmovss [rax+rdx*4],xmm1
+    jmp getPlayerOxygenChangeReturn
+
+omniPlayerOxygenChangeHook:
+    jmp getPlayerOxygenChange
+getPlayerOxygenChangeReturn:
+
+
 // Gets the player's location information.
 // This only polls the player's location, no filtering needed.
 // rax: Player location structure (+0x50).
@@ -193,6 +241,16 @@ unregistersymbol(playerLocation)
 dealloc(playerLocation)
 dealloc(getPlayerLocation)
 
+
+// Cleanup of omniPlayerOxygenChangeHook
+omniPlayerOxygenChangeHook:
+    db C5 FA 11 0C 90
+
+unregistersymbol(omniPlayerOxygenChangeHook)
+
+dealloc(getPlayerOxygenChange)
+
+
 // Cleanup of omniPlayerHook
 omniPlayerHook:
     db 48 8B 01 48 8B FA
@@ -211,10 +269,12 @@ dealloc(playerMaxHealth)
 dealloc(player)
 dealloc(getPlayer)
 
+
 // Cleanup of getActorValue
 unregistersymbol(getActorValue)
 
 dealloc(getActorValue)
+
 
 // Cleanup of omniActorValueKeysHook
 unregistersymbol(actorValueKeys)
