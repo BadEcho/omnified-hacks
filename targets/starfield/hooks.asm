@@ -29,15 +29,57 @@ registersymbol(actorValueKeys)
 // 
 // Each actor value key found in this array correspond with a particular ActorValueInfo type. In order to look up the value of an ActorValueInfo type for a particular NPC,
 // iterate through the property bag found in the entity's structure for entries pointing to the particular key. Each key seems to have a hardcoded identifier, known ones
-// will be listed here:
+// will be listed here.
+//
+// ActorValueInfo types are structured as having a base type, with no modifiers, linked to an effective value type with modifiers applied. 
+// The effective value type is located at [[actorValueInfo+0xB0]+x0]
 //
 // Known ActorValueInfo Types:
+//  Maximum Oxygen - 0x8
 //  Maximum Health - 0x108
 omniActorValueKeysHook+(DWORD)[omniActorValueKeysHook+3]+7:
 actorValueKeys:
 
+
+// Searches for and returns the value for an ActorValueInfo type.
+// [rsp+18]: The max ActorValueInfo entry address to check.
+// [rsp+20]: The start of the ActorValueInfo property bag.
+// [rsp+28]: The base ActorValueInfo type key.
+// Return value is in RAX.
+// In order to find effective ActorValueInfo values, we iterate through all entries in the ActorValueInfo property bag for a matching key 
+// at [entry+0x0]. Each entry is 16 bytes. Value is at matched [entry+0x8].
+alloc(getActorValue,$1000)
+
+registersymbol(getActorValue)
+
+getActorValue:
+    // Load the effective ActorValueInfo type.    
+    push rbx
+    push rcx    
+    mov rax,[rsp+28]
+    mov rbx,[rax+B0]
+    mov rax,[rbx]
+    mov rbx,[rsp+20]
+    mov rcx,[rsp+18]
+nextActorValue:
+    // Check if we're past the last ActorValueInfo entry.
+    cmp rbx,rcx
+    jg getActorValueExit
+    cmp rax,[rbx]    
+    je readActorValue
+    add rbx,10
+    jmp nextActorValue
+readActorValue:
+    mov rax,[rbx+8]
+getActorValueExit:
+    pop rcx
+    pop rbx
+    ret 18
+
+
 // Gets the player's root structure.
 // Effective health is located at [player]+0x3B8 -- it is stored as an offset (seems to be either 0 or a negative value, which you add to the maximum health to get your health).
+// Effective oxygen is located at [player]+0x3C4 -- also an offset.
 // Maximum health is an ActorValueInfo property whose key value can be found at [[actorValueKeys+0x108]+0xB0]+x0]
 // In order to find ActorValueInfo values, search in [player+0x2A0], for specific key at [entry+0x0] every 16 bytes. Value is at matched [entry+0x8].
 // UNIQUE AOB: 48 8B 01 48 8B FA 33 DB FF 90 E0
@@ -46,46 +88,56 @@ define(omniPlayerHook,"Starfield.exe"+1A096CE)
 assert(omniPlayerHook,48 8B 01 48 8B FA)
 alloc(getPlayer,$1000,omniPlayerHook)
 alloc(player,8)
+alloc(playerHealth,8)
 alloc(playerMaxHealth,8)
+alloc(playerMaxOxygen,8)
+alloc(playerOxygen,8)
 
+registersymbol(playerOxygen)
+registersymbol(playerMaxOxygen) 
+registersymbol(playerHealth)
 registersymbol(playerMaxHealth)
 registersymbol(player)
 registersymbol(omniPlayerHook)
 
 getPlayer:
     pushf
+    sub rsp,10
+    movdqu [rsp],xmm0
     push rax
     push rbx
     push rdx
-    push rsi
-    mov [player],rcx    
-    // Load the maximum health actor value key.
-    mov rbx,[actorValueKeys+108]
-    mov rax,[rbx+B0]
-    mov rbx,[rax]    
-    // Calculate the maximum possible entry address based on the number of entries stored at [player+0x298].
+    mov [player],rcx        
+    // Calculate the max ActorValueInfo entry address to check based on the number of entries stored at [player+0x298].
     mov rax,[rcx+298]
     mov rdx,10
     mul rdx
     add rax,[rcx+2A0]
-    // Find the maximum health by searching in the ActorValueInfo property bag.
-    mov rsi,[rcx+2A0]
-nextActorValue:
-    // Check if we're past the last ActorValueInfo entry.
-    cmp rsi,rax
-    jg getActorValueExit
-    cmp rbx,[rsi]    
-    je readActorValue
-    add rsi,10
-    jmp nextActorValue
-readActorValue:
-    mov rbx,[rsi+8]
-    mov [playerMaxHealth],rbx
-getActorValueExit:
-    pop rsi
+    mov rbx,rax    
+    // Find the maximum health value.
+    push [actorValueKeys+108]
+    push [rcx+2A0]
+    push rbx
+    call getActorValue
+    mov [playerMaxHealth],rax
+    // Find the maximum oxygen value.
+    push [actorValueKeys+8]
+    push [rcx+2A0]
+    push rbx
+    call getActorValue
+    mov [playerMaxOxygen],rax 
+    // Calculate display values for current health and oxygen.
+    movss xmm0,[rcx+3B8]
+    addss xmm0,[playerMaxHealth]
+    movss [playerHealth],xmm0
+    movss xmm0,[rcx+3C4]
+    addss xmm0,[playerMaxOxygen]
+    movss [playerOxygen],xmm0
     pop rdx
     pop rbx
     pop rax
+    movdqu xmm0,[rsp]
+    add rsp,10
 getPlayerOriginalCode:
     popf
     mov rax,[rcx]
@@ -148,10 +200,21 @@ omniPlayerHook:
 unregistersymbol(omniPlayerHook)    
 unregistersymbol(player)
 unregistersymbol(playerMaxHealth)
+unregistersymbol(playerMaxOxygen)
+unregistersymbol(playerHealth)
+unregistersymbol(playerOxygen)
 
+dealloc(playerOxygen)
+dealloc(playerHealth)
+dealloc(playerMaxOxygen)
 dealloc(playerMaxHealth)
 dealloc(player)
 dealloc(getPlayer)
+
+// Cleanup of getActorValue
+unregistersymbol(getActorValue)
+
+dealloc(getActorValue)
 
 // Cleanup of omniActorValueKeysHook
 unregistersymbol(actorValueKeys)
