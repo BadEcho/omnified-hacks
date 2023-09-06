@@ -229,7 +229,54 @@ omniPlayerLocationHook:
 getPlayerLocationReturn:
 
 
+// Gets the magazine of the currently equipped weapon.
+// rbx: Ammunition module for the equipped weapon (EquippedWeapon::AmmunitionModule).
+// [rbx+10]: The ammunition type -- we filter out structures that lack an ammunition type, as this corresponds to an (atm unknown) 
+//           ammunition type (unrelated to our equipped weapon) which is constantly being polled.
+// [rbx+18]: Remaining number of bullets in the magazine.
+// UNIQUE AOB: 8B 7B 18 C5 F0 57 C9
+define(omniPlayerMagazineHook,"Starfield.exe"+1F2649A)
+
+assert(omniPlayerMagazineHook,8B 7B 18 C5 F0 57 C9)
+alloc(getPlayerMagazine,$1000,omniPlayerMagazineHook)
+alloc(playerMagazine,8)
+
+registersymbol(playerMagazine)
+registersymbol(omniPlayerMagazineHook)
+
+getPlayerMagazine:
+    pushf
+    push rax
+    mov eax,[rbx+10]
+    cmp eax,0
+    je getPlayerMagazineExit
+    mov [playerMagazine],rbx
+getPlayerMagazineExit:
+    pop rax
+getPlayerMagazineOriginalCode:
+    popf
+    mov edi,[rbx+18]
+    vxorps xmm1,xmm1,xmm1
+    jmp getPlayerMagazineReturn
+
+omniPlayerMagazineHook:
+    jmp getPlayerMagazine
+    nop 2
+getPlayerMagazineReturn:
+
+
 [DISABLE]
+
+// Cleanup of omniPlayerMagazineHook
+omniPlayerMagazineHook:
+    db 8B 7B 18 C5 F0 57 C9
+
+unregistersymbol(omniPlayerMagazineHook)
+unregistersymbol(playerMagazine)
+
+dealloc(playerMagazine)
+dealloc(getPlayerMagazine)
+
 
 // Cleanup of omniPlayerLocationHook
 omniPlayerLocationHook:
