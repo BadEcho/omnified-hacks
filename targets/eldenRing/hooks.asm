@@ -1,7 +1,7 @@
 //----------------------------------------------------------------------
 // Hooks for Omnified Elden Ring
 // Written By: Matt Weber (https://badecho.com) (https://twitch.tv/omni)
-// Copyright 2022 Bad Echo LLC
+// Copyright 2023 Bad Echo LLC
 //
 // Bad Echo Technologies are licensed under a
 // Creative Commons Attribution-NonCommercial 4.0 International License.
