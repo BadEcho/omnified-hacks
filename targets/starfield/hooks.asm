@@ -265,7 +265,117 @@ omniPlayerMagazineHook:
 getPlayerMagazineReturn:
 
 
+// Gets the total ammo of a weapon when switching to it, firing it after a reload, alt-tabbing back into the game, and loading a save file, but NOT when reloading the gun.
+// r14: TESAmmo type
+// r9: Ammo amount
+// UNIQUE AOB: 41 8B C1 C3 CC CC CC CC CC 48
+define(omniPlayerAmmoHook,"Starfield.exe"+19C6247)
+
+assert(omniPlayerAmmoHook,41 8B C1 C3 CC)
+alloc(getPlayerAmmo,$1000,omniPlayerAmmoHook)
+alloc(playerAmmo,8)
+
+registersymbol(playerAmmo)
+registersymbol(omniPlayerAmmoHook)
+
+getPlayerAmmo:
+    pushf
+    push rax
+    mov rax,playerMagazine
+    cmp [rax],0
+    pop rax
+    je getPlayerAmmoOriginalCode
+    push rbx
+    push rdx  
+    // Data other than our current weapon's ammo is polled here. Filter them out by matching the ammo type with what's in [playerMagazine+10].
+    mov rdx,playerMagazine
+    mov rbx,[rdx]
+    cmp r14,[rbx+10]
+    jne getPlayerAmmoExit
+    mov [playerAmmo],r9
+    // Subtract what's currently in the clip to get an accurate "remaining" count.
+    mov rdx,[rbx+18]
+    sub [playerAmmo],rdx
+getPlayerAmmoExit:
+    pop rdx
+    pop rbx
+getPlayerAmmoOriginalCode:
+    popf
+    mov eax,r9d
+    ret 
+    int 3 
+    jmp getPlayerAmmoReturn
+
+omniPlayerAmmoHook:
+    jmp getPlayerAmmo
+getPlayerAmmoReturn:
+
+
+// Fires when the ammo count in the magazine changes.
+// UNIQUE AOB: 89 71 18 48 8D 4C 24 20
+// rcx: Container undergoing change.
+// esi: New ammo count.
+define(omniPlayerMagazineChangeHook,"Starfield.exe"+1A1C7C6)
+
+assert(omniPlayerMagazineChangeHook,89 71 18 48 8D 4C 24 20)
+alloc(getPlayerMagazineChange,$1000,omniPlayerMagazineChangeHook)
+
+registersymbol(omniPlayerMagazineChangeHook)
+
+getPlayerMagazineChange:
+    pushf
+    push rax
+    push rbx
+    // Check if the container being updated is the player's magazine.
+    mov rax,playerMagazine
+    mov rbx,[rax]
+    cmp rbx,rcx
+    jne getPlayerMagazineChangeExit
+    // Check if the change is from a reload (new ammo count will be greater than current ammo count).
+    cmp esi,[rcx+18]
+    jle getPlayerMagazineChangeExit
+    // Subtract the number of additional bullets being loaded into the magazine from our total ammo count.
+    mov rax,esi
+    sub rax,[rcx+18]
+    mov rbx,playerAmmo
+    sub [rbx],rax
+getPlayerMagazineChangeExit:
+    pop rbx
+    pop rax
+getPlayerMagazineChangeOriginalCode:
+    popf
+    mov [rcx+18],esi
+    lea rcx,[rsp+20]
+    jmp getPlayerMagazineChangeReturn
+
+omniPlayerMagazineChangeHook:
+    jmp getPlayerMagazineChange
+    nop 3
+getPlayerMagazineChangeReturn:
+
+
 [DISABLE]
+
+
+// Cleanup of omniPlayerMagazineChangeHook
+omniPlayerMagazineChangeHook:
+    db 89 71 18 48 8D 4C 24 20
+
+unregistersymbol(omniPlayerMagazineChangeHook)
+
+dealloc(getPlayerMagazineChange)
+
+
+// Cleanup of omniPlayerAmmoHook
+omniPlayerAmmoHook:
+    db 41 8B C1 C3 CC
+
+unregistersymbol(omniPlayerAmmoHook)
+unregistersymbol(playerAmmo)
+
+dealloc(playerAmmo)
+dealloc(getPlayerAmmo)
+
 
 // Cleanup of omniPlayerMagazineHook
 omniPlayerMagazineHook:
