@@ -234,6 +234,7 @@ getPlayerLocationReturn:
 // [rbx+10]: The ammunition type -- we filter out structures that lack an ammunition type, as this corresponds to an (atm unknown) 
 //           ammunition type (unrelated to our equipped weapon) which is constantly being polled.
 // [rbx+18]: Remaining number of bullets in the magazine.
+// r12: PlayerCharacter structure for entity that magazine belongs to.
 // UNIQUE AOB: 8B 7B 18 C5 F0 57 C9
 define(omniPlayerMagazineHook,"Starfield.exe"+1F2649A)
 
@@ -247,11 +248,17 @@ registersymbol(omniPlayerMagazineHook)
 getPlayerMagazine:
     pushf
     push rax
+    push rcx
+    mov rax,player
+    mov rcx,[player]
     mov eax,[rbx+10]
     cmp eax,0
     je getPlayerMagazineExit
+    cmp rcx,r12
+    jne getPlayerMagazineExit
     mov [playerMagazine],rbx
 getPlayerMagazineExit:
+    pop rcx
     pop rax
 getPlayerMagazineOriginalCode:
     popf
