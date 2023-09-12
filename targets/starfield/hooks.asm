@@ -361,7 +361,132 @@ omniPlayerMagazineChangeHook:
 getPlayerMagazineChangeReturn:
 
 
+// Initiates the Apocalypse system.
+// This code runs whenever any player/npc vital metric is being updated (health, oxygen, others unknown).
+// [rax+8]: Offset value being updated.
+// rsi: Base of either PlayerCharacter or Actor struct receiving change.
+// xmm7: Signed damage offset being done.
+// xmm0: Working health offset.
+// xmm1: Maximum health value.
+// (rax - rsi) will equal 0x3B0 when it is the health being updated.
+// Filter out RAX==0x1 (junk).
+// rbx: Damage source (Either PlayerCharacter or Actor)
+// UNIQUE AOB: C5 FA 58 D7 C5 FA 11 55 48
+define(omnifyApocalypseHook,"Starfield.exe"+24C161D)
+
+assert(omnifyApocalypseHook,C5 FA 58 D7 C5 FA 11 55 48)
+alloc(initiateApocalypse,$1000,omnifyApocalypseHook)
+
+registersymbol(omnifyApocalypseHook)
+
+initiateApocalypse:
+    pushf
+    // Check if junk.
+    cmp rax,1
+    je initiateApocalypseOriginalCode   
+    // Check if the necessary pointers have been found.
+    push rax
+    mov rax,player
+    cmp [rax],0    
+    pop rax    
+    je initiateApocalypseOriginalCode
+    push rax
+    mov rax,playerLocation
+    cmp [rax],0
+    pop rax
+    je initiateApocalypseOriginalCode
+    // Check if health is being updated.
+    push rax 
+    sub rax,rsi
+    cmp rax,0x3B0
+    pop rax
+    jne initiateApocalypseOriginalCode    
+    sub rsp,10
+    movdqu [rsp],xmm2
+    push rax
+    push rbx
+    push rcx
+    // Make damage offset unsigned and then load it as the first common parameter.
+    mov rcx,0x80000000
+    movd xmm2,rcx
+    xorps xmm7,xmm2
+    sub rsp,8
+    movd [rsp],xmm7
+    // Calculate current health and then load it as the second common parameter.
+    addss xmm0,xmm1    
+    sub rsp,8
+    movd [rsp],xmm0
+    // Check if player's health is being updated, or an NPC's.
+    mov rax,player
+    mov rcx,[rax]    
+    cmp rcx,rsi
+    je initiatePlayerApocalypse
+    jmp initiateEnemyApocalypse
+initiatePlayerApocalypse:
+    // Load the maximum health as the next parameter.
+    sub rsp,8
+    movd [rsp],xmm1
+    // Finally, load the player's location structure, aligned at the x-coordinate.
+    mov rax,playerLocation
+    mov rcx,[rax]    
+    lea rax,[rcx+80]
+    push rax
+    call executePlayerApocalypse
+    jmp initiateApocalypseUpdateDamage
+initiateEnemyApocalypse:
+    // An enemy is being damaged. Check if the player is the source of the damage.
+    cmp rcx,rbx
+    jne abortApocalypse
+    call executeEnemyApocalypse 
+initiateApocalypseUpdateDamage:
+    // Convert updated damage offset back to signed format.
+    movd xmm7,eax
+    mov rcx,0x80000000
+    movd xmm2,rcx
+    xorps xmm7,xmm2
+    // Convert updated working health value into an offset (new health - maximum health).
+    movd xmm0,ebx
+    movss xmm2,xmm1
+    subss xmm0,xmm2
+    jmp initiateApocalypseCleanup
+abortApocalypse:
+    // Adjust the stack to account for the common parameters that weren't used.
+    add rsp,10
+initiateApocalypseCleanup:
+    pop rcx
+    pop rbx
+    pop rax
+    movdqu xmm2,[rsp]
+    add rsp,10
+initiateApocalypseOriginalCode:
+    popf
+    vaddss xmm2,xmm0,xmm7
+    vmovss [rbp+48],xmm2
+    jmp initiateApocalypseReturn
+
+omnifyApocalypseHook:
+    jmp initiateApocalypse
+    nop 4
+initiateApocalypseReturn:
+
+
+yIsVertical:
+    dd 0
+
+// Launch our ship.
+verticalTeleportitisDisplacementX:
+    dd (float)100.0
+
+
 [DISABLE]
+
+// Cleanup of omnifyApocalypseHook
+omnifyApocalypseHook:
+    db C5 FA 58 D7 C5 FA 11 55 48
+
+unregistersymbol(omnifyApocalypseHook)
+
+dealloc(initiateApocalypse)
 
 
 // Cleanup of omniPlayerMagazineChangeHook
