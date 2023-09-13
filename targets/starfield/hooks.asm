@@ -371,6 +371,7 @@ getPlayerMagazineChangeReturn:
 // (rax - rsi) will equal 0x3B0 when it is the health being updated.
 // Filter out RAX==0x1 (junk).
 // rbx: Damage source (Either PlayerCharacter or Actor)
+// Filter out RBX==0x0 (environmental sourced).
 // UNIQUE AOB: C5 FA 58 D7 C5 FA 11 55 48
 define(omnifyApocalypseHook,"Starfield.exe"+24C161D)
 
@@ -384,6 +385,9 @@ initiateApocalypse:
     // Check if junk.
     cmp rax,1
     je initiateApocalypseOriginalCode   
+    // Filter out environmental damage.
+    cmp rbx,0
+    je initiateApocalypseOriginalCode
     // Check if the necessary pointers have been found.
     push rax
     mov rax,player
