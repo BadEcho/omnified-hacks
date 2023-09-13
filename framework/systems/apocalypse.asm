@@ -131,7 +131,7 @@ executePlayerApocalypse:
     // Check if the damage being done is enough to warrant Apocalypse execution.
     mov rax,damageThreshold
     ucomiss xmm0,[rax]  
-    jbe exitPlayerApocalypse
+    jle exitPlayerApocalypse
     // If God Mode is disabled, then we apply the Apocalypse.
     cmp [playerGodMode],1
     jne applyApocalypse
