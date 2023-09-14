@@ -245,6 +245,35 @@ omniPlayerLocationHook:
 getPlayerLocationReturn:
 
 
+// Gets the player ship's location information.
+// rcx: The player ship's bhkCharProxyController. The hknpBSCharacterProxy (which contains the coords) can be found at [rcx+4D0].
+define(omniPlayerShipLocationHook,"Starfield.exe"+1F84EBB)
+
+assert(omniPlayerShipLocationHook,48 8B 01 48 8D 54 24 30)
+alloc(getPlayerShipLocation,$1000,omniPlayerShipLocationHook)
+alloc(playerShipLocation,8)
+
+registersymbol(playerShipLocation)
+registersymbol(omniPlayerShipLocationHook)
+
+getPlayerShipLocation:
+    pushf
+    push rax
+    mov rax,[rcx+4D0]
+    mov [playerShipLocation],rax
+    pop rax
+getPlayerShipLocationOriginalCode:
+    popf
+    mov rax,[rcx]
+    lea rdx,[rsp+30]
+    jmp getPlayerShipLocationReturn
+
+omniPlayerShipLocationHook:
+    jmp getPlayerShipLocation
+    nop 3
+getPlayerShipLocationReturn:
+
+
 // Gets the magazine of the currently equipped weapon.
 // rbx: Ammunition module for the equipped weapon (EquippedWeapon::AmmunitionModule).
 // [rbx+10]: The ammunition type -- we filter out structures that lack an ammunition type, as this corresponds to an (atm unknown) 
@@ -549,6 +578,17 @@ unregistersymbol(playerLocation)
 
 dealloc(playerLocation)
 dealloc(getPlayerLocation)
+
+
+// Cleanup of omniPlayerShipLocationHook
+omniPlayerShipLocationHook:
+    db 48 8B 01 48 8D 54 24 30
+
+unregistersymbol(omniPlayerShipLocationHook)
+unregistersymbol(playerShipLocation)
+
+dealloc(playerShipLocation)
+dealloc(getPlayerShipLocation)
 
 
 // Cleanup of omniPlayerVitalsChangeHook
