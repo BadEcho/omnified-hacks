@@ -150,52 +150,68 @@ omniPlayerHook:
 getPlayerReturn:
 
 
-// Gets changes to the player's oxygen level.
-// [rax+rdx*4]: Address of oxygen offset being updated.
-// xmm1: New oxygen offset.
-// Unlike the player hook, which runs all the time, this only runs when active changes are occurring to the player's oxygen.
+// Gets updates to the player's vitals (health, oxygen, etc.).
+// [rax+rdx*4]: Address of vitals offset being updated.
+// xmm1: New vitals offset.
+// Unlike the player hook, which runs all the time, this only runs when active changes are occurring to the player's vitals.
 // Despite this, when it does run, it executes far more frequently than the player hook. 
-// Because of this, our display value for oxygen, which we export as a statistic, also needs to be updated here so that all 
+// Because of this, our display values for the vitals, which we export as a statistic, also need to be updated here so that all 
 // changes are reported. 
 // UNIQUE AOB: C5 FA 11 0C 90 * * * * EB
-define(omniPlayerOxygenChangeHook,"Starfield.exe"+24BCEDD)
+define(omniPlayerVitalsChangeHook,"Starfield.exe"+24BCEDD)
 
-assert(omniPlayerOxygenChangeHook,C5 FA 11 0C 90)
-alloc(getPlayerOxygenChange,$1000,omniPlayerOxygenChangeHook)
+assert(omniPlayerVitalsChangeHook,C5 FA 11 0C 90)
+alloc(getPlayerVitalsChange,$1000,omniPlayerVitalsChangeHook)
 
-registersymbol(omniPlayerOxygenChangeHook)
+registersymbol(omniPlayerVitalsChangeHook)
 
-getPlayerOxygenChange:
+getPlayerVitalsChange:
     pushf
     sub rsp,10
     movdqu [rsp],xmm0
     push rbx
     push rcx
+    push rsi
+    // Check if updated vital stat is oxygen.
     // Unknown at this time if this procedure updates vitals in addition to oxygen, checking if it is the player's oxygen being changed to be sure.
     mov rcx,player
     mov rbx,[rcx]
     lea rcx,[rbx+3C4]
-    lea rbx,[rax+rdx*4]
-    cmp rcx,rbx
-    jne getPlayerOxygenChangeExit
+    lea rsi,[rax+rdx*4]
+    cmp rcx,rsi
+    je updatePlayerOxygen
+    // Check if update vital stat is health.
+    lea rcx,[rbx+3B8]
+    cmp rcx,rsi
+    je updatePlayerHealth    
+    jmp getPlayerVitalsChangeExit
+updatePlayerOxygen:
     mov rbx,playerMaxOxygen
-    movss xmm0,[playerMaxOxygen]
+    movss xmm0,[rbx]
     addss xmm0,xmm1
     mov rbx,playerOxygen
     movss [rbx],xmm0    
-getPlayerOxygenChangeExit:
+    jmp getPlayerVitalsChangeExit
+updatePlayerHealth:
+    mov rbx,playerMaxHealth
+    movss xmm0, [rbx]
+    addss xmm0,xmm1
+    mov rbx,playerHealth
+    movss [rbx],xmm0
+getPlayerVitalsChangeExit:
+    pop rsi
     pop rcx
     pop rbx
     movdqu xmm0,[rsp]
     add rsp,10
-getPlayerOxygenChangeOriginalCode:
+getPlayerVitalsChangeOriginalCode:
     popf
     vmovss [rax+rdx*4],xmm1
-    jmp getPlayerOxygenChangeReturn
+    jmp getPlayerVitalsChangeReturn
 
-omniPlayerOxygenChangeHook:
-    jmp getPlayerOxygenChange
-getPlayerOxygenChangeReturn:
+omniPlayerVitalsChangeHook:
+    jmp getPlayerVitalsChange
+getPlayerVitalsChangeReturn:
 
 
 // Gets the player's location information.
@@ -535,13 +551,13 @@ dealloc(playerLocation)
 dealloc(getPlayerLocation)
 
 
-// Cleanup of omniPlayerOxygenChangeHook
-omniPlayerOxygenChangeHook:
+// Cleanup of omniPlayerVitalsChangeHook
+omniPlayerVitalsChangeHook:
     db C5 FA 11 0C 90
 
-unregistersymbol(omniPlayerOxygenChangeHook)
+unregistersymbol(omniPlayerVitalsChangeHook)
 
-dealloc(getPlayerOxygenChange)
+dealloc(getPlayerVitalsChange)
 
 
 // Cleanup of omniPlayerHook
