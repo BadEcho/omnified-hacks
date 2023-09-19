@@ -614,7 +614,43 @@ verticalTeleportitisDisplacementX:
     dd (float)100.0
 
 
+// Initiates the Predator system.
+// This is the movement application subroutine for NPCs (not the player).
+// xmm1: x- and y-offsets (double precision)
+// xmm0: z-offset
+// [rsi+10]: current x- and y-coordinates for NPC (double precision, again)
+// [rsi+20]: current z-offset for NPC
+define(omnifyPredatorHook,"Starfield.exe"+12243D4)
+
+assert(omnifyPredatorHook,66 0F 58 E1 66 0F 58 D0)
+alloc(initiatePredator,$1000,omnifyPredatorHook)
+
+registersymbol(omnifyPredatorHook)
+
+initiatePredator:
+    pushf
+initiatePredatorOriginalCode:
+    popf
+    addpd xmm4,xmm1
+    addpd xmm2,xmm0
+    jmp initiatePredatorReturn
+
+omnifyPredatorHook:
+    jmp initiatePredator
+    nop 3
+initiatePredatorReturn:
+
+
 [DISABLE]
+
+// Cleanup of omnifyPredatorHook
+omnifyPredatorHook:
+    db 66 0F 58 E1 66 0F 58 D0
+
+unregistersymbol(omnifyPredatorHook)
+
+dealloc(initiatePredator)
+
 
 // Cleanup of omnifyApocalypseHook
 omnifyApocalypseHook:
