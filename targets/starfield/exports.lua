@@ -17,9 +17,21 @@ function registerExports()
         local magazine = toInt(readInteger("[playerMagazine]+0x18"))
         local totalAmmo = toInt(readInteger("playerAmmo"))
 
-        return {
+        local additionalStatisticsTable = {
             FractionalStatistic("Ammo", magazine, totalAmmo, "#00000000", "#00000000")
         }
+
+        local playerInShip = readInteger("playerInShip")
+
+        if playerInShip == 1 then
+            local shipX = readFloat("[playerShipLocation]+0x80")
+            local shipY = readFloat("[playerShipLocation]+0x84")
+            local shipZ = readFloat("[playerShipLocation]+0x88")
+
+            table.insert(additionalStatisticsTable, CoordinateStatistic("Ship", shipX, shipY, shipZ))
+        end
+
+        return additionalStatisticsTable
     end
 end
 

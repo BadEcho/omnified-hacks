@@ -83,7 +83,7 @@ getActorValueExit:
 // Maximum health is an ActorValueInfo property whose key value can be found at [[actorValueKeys+0x108]+0xB0]+x0]
 // In order to find ActorValueInfo values, search in [player+0x2A0], for specific key at [entry+0x0] every 16 bytes. Value is at matched [entry+0x8].
 // UNIQUE AOB: 48 8B 01 48 8B FA 33 DB FF 90 E0
-define(omniPlayerHook,"Starfield.exe"+1A096CE)
+define(omniPlayerHook,"Starfield.exe"+1A0968E)
 
 assert(omniPlayerHook,48 8B 01 48 8B FA)
 alloc(getPlayer,$1000,omniPlayerHook)
@@ -158,17 +158,21 @@ getPlayerReturn:
 // Because of this, our display values for the vitals, which we export as a statistic, also need to be updated here so that all 
 // changes are reported. 
 // UNIQUE AOB: C5 FA 11 0C 90 * * * * EB
-define(omniPlayerVitalsChangeHook,"Starfield.exe"+24BCEDD)
+define(omniPlayerVitalsChangeHook,"Starfield.exe"+24BCD1D)
 
 assert(omniPlayerVitalsChangeHook,C5 FA 11 0C 90)
 alloc(getPlayerVitalsChange,$1000,omniPlayerVitalsChangeHook)
+alloc(deathCounter,8)
 
+registersymbol(deathCounter)
 registersymbol(omniPlayerVitalsChangeHook)
 
 getPlayerVitalsChange:
     pushf
     sub rsp,10
     movdqu [rsp],xmm0
+    sub rsp,10
+    movdqu [rsp],xmm2
     push rbx
     push rcx
     push rsi
@@ -197,11 +201,24 @@ updatePlayerHealth:
     movss xmm0, [rbx]
     addss xmm0,xmm1
     mov rbx,playerHealth
+    // Back up to check if we're already in the negative (avoid duplicate death counts).
+    movss xmm2,[rbx]
     movss [rbx],xmm0
+    xorps xmm0,xmm0
+    ucomiss xmm2,xmm0
+    jbe getPlayerVitalsChangeExit
+    // The player wasn't previously dead. Check if they are now.
+    movss xmm0,[rbx]
+    xorps xmm2,xmm2
+    ucomiss xmm0,xmm2
+    ja getPlayerVitalsChangeExit
+    inc [deathCounter]
 getPlayerVitalsChangeExit:
     pop rsi
     pop rcx
     pop rbx
+    movdqu xmm2,[rsp]
+    add rsp,10
     movdqu xmm0,[rsp]
     add rsp,10
 getPlayerVitalsChangeOriginalCode:
@@ -214,10 +231,15 @@ omniPlayerVitalsChangeHook:
 getPlayerVitalsChangeReturn:
 
 
+deathCounter:
+    dd 0
+
+
 // Gets the player's location information.
 // This only polls the player's location, no filtering needed.
 // rax: Player location structure (+0x50).
 // The structure address is off by 0x50 (x-coordinate is normally at playerLocation+0x80), so adjustment is needed.
+// UNIQUE AOB: 0F 58 78 30 0F B7 C7
 define(omniPlayerLocationHook,"Starfield.exe"+C52546)
 
 assert(omniPlayerLocationHook,0F 58 78 30 0F B7 C7)
@@ -247,7 +269,8 @@ getPlayerLocationReturn:
 
 // Gets the player ship's location information.
 // rcx: The player ship's bhkCharProxyController. The hknpBSCharacterProxy (which contains the coords) can be found at [rcx+4D0].
-define(omniPlayerShipLocationHook,"Starfield.exe"+1F84EBB)
+// UNIQUE AOB: 2A 48 8D 48 20 48 8B 01 48 8D 54 24 30
+define(omniPlayerShipLocationHook,"Starfield.exe"+1F84E8B)
 
 assert(omniPlayerShipLocationHook,48 8B 01 48 8D 54 24 30)
 alloc(getPlayerShipLocation,$1000,omniPlayerShipLocationHook)
@@ -274,6 +297,70 @@ omniPlayerShipLocationHook:
 getPlayerShipLocationReturn:
 
 
+// Detects when the player is piloting their ship.
+// UNIQUE AOB: C5 F8 11 83 80 00 00 00 E8
+define(omniPlayerInShipHook,"Starfield.exe"+2D65B9D)
+
+assert(omniPlayerInShipHook,C5 F8 11 83 80 00 00 00)
+alloc(isPlayerInShip,$1000,omniPlayerInShipHook)
+alloc(playerInShip,8)
+
+registersymbol(playerInShip)
+registersymbol(omniPlayerInShipHook)
+
+isPlayerInShip:
+    mov [playerInShip],1
+isPlayerInShipOriginalCode:
+    vmovups [rbx+00000080],xmm0
+    jmp isPlayerInShipReturn
+
+omniPlayerInShipHook:
+    jmp isPlayerInShip
+    nop 3
+isPlayerInShipReturn:
+
+
+// Detects when the player is no longer piloting their ship.
+// rax: x-coordinate member of character proxy being polled (adjust by -0x80 to normalize)
+// UNIQUE AOB: C5 F8 10 00 C4 C1 78 11 06 48 8B 03
+define(omniPlayerNotInShipHook,"Starfield.exe"+2D64217)
+
+assert(omniPlayerNotInShipHook,C5 F8 10 00 C4 C1 78 11 06)
+alloc(isPlayerNotInShip,$1000,omniPlayerNotInShipHook)
+
+registersymbol(omniPlayerNotInShipHook)
+
+isPlayerNotInShip:
+    pushf
+    push rax
+    mov rax,playerLocation
+    cmp [rax],0
+    pop rax
+    je isPlayerNotInShipOriginalCode
+    push rax
+    push rbx
+    sub rax,80
+    mov rbx,playerLocation
+    cmp rax,[rbx]
+    jne isPlayerNotInShipExit
+    // We are not piloting da ship. No longer sitting on da cockpit seat.
+    mov rax,playerInShip
+    mov [rax],0
+isPlayerNotInShipExit:
+    pop rbx
+    pop rax
+isPlayerNotInShipOriginalCode:
+    popf
+    vmovups xmm0,[rax]
+    vmovups [r14],xmm0
+    jmp isPlayerNotInShipReturn
+
+omniPlayerNotInShipHook:
+    jmp isPlayerNotInShip
+    nop 4
+isPlayerNotInShipReturn:
+
+
 // Gets the magazine of the currently equipped weapon.
 // rbx: Ammunition module for the equipped weapon (EquippedWeapon::AmmunitionModule).
 // [rbx+10]: The ammunition type -- we filter out structures that lack an ammunition type, as this corresponds to an (atm unknown) 
@@ -281,7 +368,7 @@ getPlayerShipLocationReturn:
 // [rbx+18]: Remaining number of bullets in the magazine.
 // r12: PlayerCharacter structure for entity that magazine belongs to.
 // UNIQUE AOB: 8B 7B 18 C5 F0 57 C9
-define(omniPlayerMagazineHook,"Starfield.exe"+1F2649A)
+define(omniPlayerMagazineHook,"Starfield.exe"+1F2646A)
 
 assert(omniPlayerMagazineHook,8B 7B 18 C5 F0 57 C9)
 alloc(getPlayerMagazine,$1000,omniPlayerMagazineHook)
@@ -321,7 +408,7 @@ getPlayerMagazineReturn:
 // r14: TESAmmo type
 // r9: Ammo amount
 // UNIQUE AOB: 41 8B C1 C3 CC CC CC CC CC 48
-define(omniPlayerAmmoHook,"Starfield.exe"+19C6247)
+define(omniPlayerAmmoHook,"Starfield.exe"+19C61F7)
 
 assert(omniPlayerAmmoHook,41 8B C1 C3 CC)
 alloc(getPlayerAmmo,$1000,omniPlayerAmmoHook)
@@ -367,7 +454,7 @@ getPlayerAmmoReturn:
 // UNIQUE AOB: 89 71 18 48 8D 4C 24 20
 // rcx: Container undergoing change.
 // esi: New ammo count.
-define(omniPlayerMagazineChangeHook,"Starfield.exe"+1A1C7C6)
+define(omniPlayerMagazineChangeHook,"Starfield.exe"+1A1C786)
 
 assert(omniPlayerMagazineChangeHook,89 71 18 48 8D 4C 24 20)
 alloc(getPlayerMagazineChange,$1000,omniPlayerMagazineChangeHook)
@@ -418,7 +505,7 @@ getPlayerMagazineChangeReturn:
 // rbx: Damage source (Either PlayerCharacter or Actor)
 // Filter out RBX==0x0 (environmental sourced).
 // UNIQUE AOB: C5 FA 58 D7 C5 FA 11 55 48
-define(omnifyApocalypseHook,"Starfield.exe"+24C161D)
+define(omnifyApocalypseHook,"Starfield.exe"+24C145D)
 
 assert(omnifyApocalypseHook,C5 FA 58 D7 C5 FA 11 55 48)
 alloc(initiateApocalypse,$1000,omnifyApocalypseHook)
@@ -580,6 +667,26 @@ dealloc(playerLocation)
 dealloc(getPlayerLocation)
 
 
+// Cleanup of omniPlayerNotInShipHook
+omniPlayerNotInShipHook:
+    db C5 F8 10 00 C4 C1 78 11 06
+
+unregistersymbol(omniPlayerNotInShipHook)
+
+dealloc(isPlayerNotInShip)
+
+
+// Cleanup of omniPlayerInShipHook
+omniPlayerInShipHook:
+    db C5 F8 11 83 80 00 00 00
+
+unregistersymbol(omniPlayerInShipHook)
+unregistersymbol(playerInShip)
+
+dealloc(playerInShip)
+dealloc(isPlayerInShip)
+
+
 // Cleanup of omniPlayerShipLocationHook
 omniPlayerShipLocationHook:
     db 48 8B 01 48 8D 54 24 30
@@ -596,7 +703,9 @@ omniPlayerVitalsChangeHook:
     db C5 FA 11 0C 90
 
 unregistersymbol(omniPlayerVitalsChangeHook)
+unregistersymbol(deathCounter)
 
+dealloc(deathCounter)
 dealloc(getPlayerVitalsChange)
 
 
