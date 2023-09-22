@@ -613,6 +613,10 @@ yIsVertical:
 verticalTeleportitisDisplacementX:
     dd (float)100.0
 
+// Falling underneath ground doesn't kill you (TYPICAL BETHESDA).
+negativeVerticalDisplacementEnabled:
+    dd 0
+
 
 // Initiates the Predator system.
 // This is the movement application subroutine for NPCs (not the player).
@@ -624,11 +628,67 @@ define(omnifyPredatorHook,"Starfield.exe"+12243D4)
 
 assert(omnifyPredatorHook,66 0F 58 E1 66 0F 58 D0)
 alloc(initiatePredator,$1000,omnifyPredatorHook)
-
+alloc(identityValue,8)
 registersymbol(omnifyPredatorHook)
 
 initiatePredator:
     pushf
+    // Ensure the player's location struct has been found.
+    push rax
+    mov rax,playerLocation
+    cmp [rax],0
+    pop rax
+    je initiatePredatorOriginalCode
+    // Backup calculation and output registers.
+    sub rsp,10
+    movdqu [rsp],xmm2
+    sub rsp,10
+    movdqu [rsp],xmm3
+    push rax
+    push rbx
+    push rcx
+    // Push the player's current coordinates.
+    mov rax,playerLocation
+    mov rbx,[rax]
+    push [rbx+80]
+    push [rbx+88]
+    // Push the enemy's current coordinates.
+    cvtpd2ps xmm2,[rsi+10]
+    cvtpd2ps xmm3,[rsi+20]
+    sub rsp,8
+    movq [rsp],xmm2
+    sub rsp,8
+    movq [rsp],xmm3
+    // Push an identity matrix for the scaling parameters.
+    movss xmm2,[identityValue]
+    shufps xmm2,xmm2,0
+    sub rsp,10
+    movdqu [rsp],xmm2
+    // Push the enemy's movement offsets.
+    cvtpd2ps xmm2,xmm1
+    cvtpd2ps xmm3,xmm0
+    sub rsp,8
+    movq [rsp],xmm2
+    sub rsp,8
+    movq [rsp],xmm3
+    call executePredator
+initiatePredatorUpdateOffsets:
+    // Propagate the updated x-, y-, and z-movement offsets to xmm1.
+    sub rsp,10
+    mov [rsp],eax
+    mov [rsp+4],ebx
+    mov [rsp+8],ecx
+    cvtps2pd xmm1,[rsp]
+    cvtps2pd xmm0,[rsp+8]
+    add rsp,10
+initiatePredatorCleanup:
+    pop rcx
+    pop rbx
+    pop rax
+    movdqu xmm3,[rsp]
+    add rsp,10
+    movdqu xmm2,[rsp]
+    add rsp,10
 initiatePredatorOriginalCode:
     popf
     addpd xmm4,xmm1
@@ -640,8 +700,64 @@ omnifyPredatorHook:
     nop 3
 initiatePredatorReturn:
 
+identityValue:
+    dd (float)1.0
+
+
+// Manipulates the player's speed.
+// xmm0: The movement offsets.
+// UNIQUE AOB: 0F 58 83 80 00 00 00
+define(omnifyPlayerSpeedHook,"Starfield.exe"+C0864A)
+
+assert(omnifyPlayerSpeedHook,0F 58 83 80 00 00 00)
+alloc(applyPlayerSpeed,$1000,omnifyPlayerSpeedHook)
+alloc(playerSpeedX,8)
+
+registersymbol(playerSpeedX)
+registersymbol(omnifyPlayerSpeedHook)
+
+applyPlayerSpeed:
+    pushf
+    sub rsp,10
+    movdqu [rsp],xmm1
+    sub rsp,10
+    movdqu [rsp],xmm2
+    // Jerky collision with terrain is somewhat remedied by applying boost to
+    // vertical axis as well.
+    movss xmm1,[playerSpeedX]
+    shufps xmm1,xmm1,0
+    mulps xmm0,xmm1
+    movdqu xmm2,[rsp]
+    add rsp,10
+    movdqu xmm1,[rsp]
+    add rsp,10
+applyPlayerSpeedOriginalCode:
+    popf
+    addps xmm0,[rbx+00000080]
+    jmp applyPlayerSpeedReturn
+
+omnifyPlayerSpeedHook:
+    jmp applyPlayerSpeed
+    nop 2
+applyPlayerSpeedReturn:
+
+
+playerSpeedX:
+    dd (float)1.0
+
 
 [DISABLE]
+
+// Cleanup of omnifyPlayerSpeedHook
+omnifyPlayerSpeedHook:
+    db 0F 58 83 80 00 00 00
+
+unregistersymbol(omnifyPlayerSpeedHook)
+unregistersymbol(playerSpeedX)
+
+dealloc(playerSpeedX)
+dealloc(applyPlayerSpeed)
+
 
 // Cleanup of omnifyPredatorHook
 omnifyPredatorHook:
@@ -649,6 +765,7 @@ omnifyPredatorHook:
 
 unregistersymbol(omnifyPredatorHook)
 
+dealloc(identityValue)
 dealloc(initiatePredator)
 
 
