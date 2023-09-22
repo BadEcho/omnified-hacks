@@ -609,9 +609,13 @@ initiateApocalypseReturn:
 yIsVertical:
     dd 0
 
-// Launch our ship.
+// Launch our ass.
 verticalTeleportitisDisplacementX:
     dd (float)100.0
+
+// Since teleportitis is always hilariously fatal...10 min cooldown.
+teleportitisCooldownPeriod:
+    dd 10
 
 // Falling underneath ground doesn't kill you (TYPICAL BETHESDA).
 negativeVerticalDisplacementEnabled:
