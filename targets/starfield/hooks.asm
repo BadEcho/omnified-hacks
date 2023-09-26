@@ -750,7 +750,90 @@ playerSpeedX:
     dd (float)1.0
 
 
+// Initiates (and applies) the Abomnification system.
+// UNIQUE AOB (more or less): 8B 48 20 89 4D E8 C5 FA 10 45 E8 C5 FA 58 48 2C
+// rsi: PlayerCharacter/Actor struct associated with the scale.
+// [rbx+7C]: Uniform scaling parameter.
+define(omnifyAbomnificationHook,"Starfield.exe"+1A044DC)
+
+assert(omnifyAbomnificationHook,C5 F2 59 63 7C)
+alloc(initiateAbomnification,$1000,omnifyAbomnificationHook)
+alloc(averageScaleDivisor,8)
+
+registersymbol(averageScaleDivisor)
+registersymbol(omnifyAbomnificationHook)
+
+initiateAbomnification:
+    pushf
+    push rax
+    mov rax,player
+    cmp [rax],0
+    pop rax
+    je initiateAbomnificationOriginalCode
+    push rax
+    mov rax,player
+    cmp [rax],rsi
+    pop rax
+    je initiateAbomnificationOriginalCode
+    // Back up Abomnification output registers as well as some SSE registers for finding the average
+    // dimensional scale.
+    sub rsp,10
+    movdqu [rsp],xmm0
+    sub rsp,10
+    movdqu [rsp],xmm1
+    push rax
+    push rbx
+    push rcx
+    // Back up rbx so we can update the scaling parameter with our output.
+    push rdx
+    mov rdx,rbx
+    // Push the BSFadeNode struct address, which is one-per-entity and holds the scaling parameter, as 
+    // the identifying address.
+    push rdx
+    call executeAbomnification
+    // Only one scale parameter is used, we'll take the average of our three dimensional scales.
+    movd xmm0,rax
+    movd xmm1,rbx
+    addss xmm0,xmm1
+    movd xmm1,rcx
+    addss xmm0,xmm1
+    divss xmm0,[averageScaleDivisor]
+    movss [rdx+7C],xmm0
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    movdqu xmm1,[rsp]
+    add rsp,10
+    movdqu xmm0,[rsp]
+    add rsp,10
+initiateAbomnificationOriginalCode:
+    popf
+    vmulss xmm4,xmm1,[rbx+7C]
+    jmp initiateAbomnificationReturn
+
+omnifyAbomnificationHook:
+    jmp initiateAbomnification
+initiateAbomnificationReturn:
+
+
+averageScaleDivisor:
+    dd (float)3.0
+
+
 [DISABLE]
+
+
+// Cleanup of omnifyAbomnificationHook
+omnifyAbomnificationHook:
+    db C5 F2 59 63 7C
+
+unregistersymbol(omnifyAbomnificationHook)
+unregistersymbol(averageScaleDivisor)
+
+dealloc(averageScaleDivisor)
+dealloc(initiateAbomnification)
+
 
 // Cleanup of omnifyPlayerSpeedHook
 omnifyPlayerSpeedHook:
