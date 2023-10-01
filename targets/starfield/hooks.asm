@@ -109,7 +109,7 @@ getPlayer:
     push rdx
     mov [player],rcx        
     // Calculate the max ActorValueInfo entry address to check based on the number of entries stored at [player+0x298].
-    mov rax,[rcx+298]
+    mov eax,[rcx+298]
     mov rdx,10
     mul rdx
     add rax,[rcx+2A0]
