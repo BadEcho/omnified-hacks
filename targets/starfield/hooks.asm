@@ -791,13 +791,9 @@ initiateAbomnification:
     // the identifying address.
     push rdx
     call executeAbomnification
-    // Only one scale parameter is used, we'll take the average of our three dimensional scales.
-    movd xmm0,rax
-    movd xmm1,rbx
-    addss xmm0,xmm1
-    movd xmm1,rcx
-    addss xmm0,xmm1
-    divss xmm0,[averageScaleDivisor]
+    // Forced static unnatural is used for this game. Generated dimensional scales will all be uniform, so we'll just arbitrarily 
+    // use the width.
+    movd xmm0,rax   
     movss [rdx+7C],xmm0
     pop rdx
     pop rcx
@@ -816,6 +812,11 @@ omnifyAbomnificationHook:
     jmp initiateAbomnification
 initiateAbomnificationReturn:
 
+abomnifyPercentage:
+    dd #25
+
+forceStaticUnnatural:
+    dd 1
 
 averageScaleDivisor:
     dd (float)3.0

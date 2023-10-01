@@ -73,7 +73,9 @@ alloc(overrideMorphSteps,8)
 alloc(overrideMorphStepsValue,8)
 alloc(disableAbomnification,8)
 alloc(defaultScaleX,8)
+alloc(forceStaticUnnatural,8)
 
+registersymbol(forceStaticUnnatural)
 registersymbol(executeAbomnification)
 registersymbol(abomnifyMorphStepsResultUpper)
 registersymbol(abomnifyMorphStepsResultLower)
@@ -212,6 +214,12 @@ generateMonsterMorphTargets:
     movss [rdx+28],xmm0
     cmp [rdx+10],0 
     jne applyMorphMode
+    // Force static unnatural if so configured.
+    cmp [forceStaticUnnatural],1
+    jne rollMorphMode
+    mov [rdx+10],1
+    jmp staticUnnaturalMorphing
+rollMorphMode:
     push [abomnifyMorphModeResultLower]
     push [abomnifyMorphModeResultUpper]
     call generateRandomNumber
@@ -373,6 +381,9 @@ speedMorphDivisor:
 defaultScaleX:
     dd (float)1.0
 
+forceStaticUnnatural:
+    dd 0
+
 zeroValue:
     dd 0	
   
@@ -476,12 +487,13 @@ unregistersymbol(overrideMorphSteps)
 unregistersymbol(overrideMorphStepsValue)
 unregistersymbol(disableAbomnification)
 unregistersymbol(defaultScaleX)
+unregistersymbol(forceStaticUnnatural)
 
+dealloc(forceStaticUnnatural)
 dealloc(defaultScaleX)
 dealloc(stopMorphs)
 dealloc(speedMorph)
 dealloc(speedMorphDivisor)
-dealloc(defaultScaleX)
 dealloc(abomnifyMorphStepsResultUpper)
 dealloc(abomnifyMorphStepsResultLower)
 dealloc(abomnifyHeightResultUpper)
