@@ -36,9 +36,20 @@ registersymbol(actorValueKeys)
 //
 // Known ActorValueInfo Types:
 //  Maximum Oxygen - 0x8
-//  Maximum Health - 0x108
+//  Ship Hull Offset (base type at root) / Maximum Health - 0x108
 omniActorValueKeysHook+(DWORD)[omniActorValueKeysHook+3]+7:
 actorValueKeys:
+
+
+// Maps a symbol to the ship shield offset actor value key.
+aobscanmodule(omniActorValueKeyShieldHook,Starfield.exe,48 8B 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B F0 4C 3B C0)
+
+label(actorValueKeyShield)
+registersymbol(actorValueKeyShield)
+
+// The same approach taken above is used to map the ship shield actor value key to a symbol.
+omniActorValueKeyShieldHook+(DWORD)[omniActorValueKeyShieldHook+3]+7:
+actorValueKeyShield:
 
 
 // Searches for and returns the value for an ActorValueInfo type.
@@ -148,6 +159,56 @@ omniPlayerHook:
     jmp getPlayer
     nop 
 getPlayerReturn:
+
+
+// Gets updates to the player ship's vitals.
+// rbx: Current ship ActorValueInfo entry
+// [rbx]: Identifying key
+// [rbx+10]: Value
+// UNIQUE AOB: C5 F2 58 73 10
+define(omniShipVitalsChangeHook,"Starfield.exe"+24F20CB)
+
+assert(omniShipVitalsChangeHook,C5 F2 58 73 10)
+alloc(getShipVitalsChange,$1000,omniShipVitalsChangeHook)
+alloc(playerShipShieldOffset,8)
+alloc(playerShipShield,8)
+alloc(playerShipHullOffset,8)
+alloc(playerShipHull,8)
+
+registersymbol(playerShipHull)
+registersymbol(playerShipHullOffset)
+registersymbol(playerShipShield)
+registersymbol(playerShipShieldOffset)
+registersymbol(omniShipVitalsChangeHook)
+
+getShipVitalsChange:
+    pushf
+    // Check if vital type is shield offset.
+    push rax
+    push rcx
+    mov rax,actorValueKeyShield
+    mov rcx,[rax]
+    cmp [rbx],rcx
+    jne checkForShipHull
+    mov [playerShipShieldOffset],rbx
+    jmp getShipVitalsChangeExit
+checkForShipHull:
+    mov rax,actorValueKeys
+    mov rcx,[rax+108]
+    cmp [rbx],rcx
+    jne getShipVitalsChangeExit
+    mov [playerShipHullOffset],rbx
+getShipVitalsChangeExit:
+    pop rcx
+    pop rax
+getShipVitalsChangeOriginalCode:
+    popf
+    vaddss xmm6,xmm1,[rbx+10]
+    jmp getShipVitalsChangeReturn
+
+omniShipVitalsChangeHook:
+    jmp getShipVitalsChange
+getShipVitalsChangeReturn:
 
 
 // Gets updates to the player's vitals (health, oxygen, etc.).
@@ -950,6 +1011,23 @@ dealloc(deathCounter)
 dealloc(getPlayerVitalsChange)
 
 
+// Cleanup of omniShipVitalsChangeHook
+omniShipVitalsChangeHook:
+    db C5 F2 58 73 10
+
+unregistersymbol(omniShipVitalsChangeHook)
+unregistersymbol(playerShipShieldOffset)
+unregistersymbol(playerShipShield)
+unregistersymbol(playerShipHullOffset)
+unregistersymbol(playerShipHull)
+
+dealloc(playerShipHull)
+dealloc(playerShipHullOffset)
+dealloc(playerShipShield)
+dealloc(playerShipShieldOffset)
+dealloc(getShipVitalsChange)
+
+
 // Cleanup of omniPlayerHook
 omniPlayerHook:
     db 48 8B 01 48 8B FA
@@ -974,6 +1052,8 @@ unregistersymbol(getActorValue)
 
 dealloc(getActorValue)
 
+// Cleanup of omniActorValueKeyShieldHook
+unregistersymbol(actorValueKeyShield)
 
 // Cleanup of omniActorValueKeysHook
 unregistersymbol(actorValueKeys)
