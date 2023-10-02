@@ -206,8 +206,29 @@ processMorphSteps:
 generateMonsterMorphTargets:  
     cvtss2si eax,xmm0
     mov [rdx],eax
-    push [abomnifyHeightResultLower]
-    push [abomnifyHeightResultUpper]
+    mov rbx,[abomnifyHeightResultLower]
+    mov rcx,[abomnifyHeightResultUpper]
+    // If static unnatural is forced, we want to biggify/smallify the random morph target range,
+    // and not the result. This will allow for greater variances in unnatural size.
+    cmp [forceStaticUnnatural],1
+    jne rollMorphTargets
+    // Convert the height range integers into floating point percentage values and apply unnaturalized
+    // multipliers ahead of time.
+    sub rsp,10
+    movdqu [rsp],xmm1
+    // Smallify the morph target lower extremum.    
+    cvtsi2ss xmm1,rbx
+    mulss xmm1,[unnaturalSmallX]
+    cvtss2si rbx,xmm1
+    // Biggify the morph target upper extremum.
+    cvtsi2ss xmm1,rcx
+    mulss xmm1,[unnaturalBigX]
+    cvtss2si rcx,xmm1
+    movdqu xmm1,[rsp]
+    add rsp,10
+rollMorphTargets:    
+    push rbx
+    push rcx
     call generateRandomNumber
     cvtsi2ss xmm0,eax
     divss xmm0,[abomnifyDivisor]
@@ -218,7 +239,8 @@ generateMonsterMorphTargets:
     cmp [forceStaticUnnatural],1
     jne rollMorphMode
     mov [rdx+10],1
-    jmp staticUnnaturalMorphing
+    // We already biggified and smallified the random roll extrema.
+    jmp unnaturalizeIt
 rollMorphMode:
     push [abomnifyMorphModeResultLower]
     push [abomnifyMorphModeResultUpper]
