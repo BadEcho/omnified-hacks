@@ -171,6 +171,7 @@ getPlayerReturn:
 // rbx: Current ship ActorValueInfo entry
 // [rbx]: Identifying key
 // [rbx+10]: Value
+// [rsp+20] | {rsp+42}: Maximum value for vital.
 // UNIQUE AOB: C5 F2 58 73 10
 define(omniShipVitalsChangeHook,"Starfield.exe"+24F20CB)
 
@@ -180,7 +181,11 @@ alloc(playerShipShieldOffset,8)
 alloc(playerShipShield,8)
 alloc(playerShipHullOffset,8)
 alloc(playerShipHull,8)
+alloc(playerShipMaxHull,8)
+alloc(playerShipMaxShield,8)
 
+registersymbol(playerShipMaxShield)
+registersymbol(playerShipMaxHull)
 registersymbol(playerShipHull)
 registersymbol(playerShipHullOffset)
 registersymbol(playerShipShield)
@@ -189,14 +194,20 @@ registersymbol(omniShipVitalsChangeHook)
 
 getShipVitalsChange:
     pushf
-    // Check if vital type is shield offset.
+    sub rsp,10
+    movdqu [rsp],xmm0
     push rax
     push rcx
+    // Check if vital type is shield offset, otherwise check for hull offset.
     mov rax,actorValueKeyShield
     mov rcx,[rax]
     cmp [rbx],rcx
     jne checkForShipHull
     mov [playerShipShieldOffset],rbx
+    movss xmm0,[rsp+42]
+    movss [playerShipMaxShield],xmm0
+    addss xmm0,[rbx+10]
+    movss [playerShipShield],xmm0
     jmp getShipVitalsChangeExit
 checkForShipHull:
     mov rax,actorValueKeys
@@ -204,9 +215,15 @@ checkForShipHull:
     cmp [rbx],rcx
     jne getShipVitalsChangeExit
     mov [playerShipHullOffset],rbx
+    movss xmm0,[rsp+42]
+    movss [playerShipMaxHull],xmm0
+    addss xmm0,[rbx+10]
+    movss [playerShipHull],xmm0
 getShipVitalsChangeExit:
     pop rcx
     pop rax
+    movdqu xmm0,[rsp]
+    add rsp,10
 getShipVitalsChangeOriginalCode:
     popf
     vaddss xmm6,xmm1,[rbx+10]
@@ -1026,7 +1043,11 @@ unregistersymbol(playerShipShieldOffset)
 unregistersymbol(playerShipShield)
 unregistersymbol(playerShipHullOffset)
 unregistersymbol(playerShipHull)
+unregistersymbol(playerShipMaxHull)
+unregistersymbol(playerShipMaxShield)
 
+dealloc(playerShipMaxShield)
+dealloc(playerShipMaxHull)
 dealloc(playerShipHull)
 dealloc(playerShipHullOffset)
 dealloc(playerShipShield)
