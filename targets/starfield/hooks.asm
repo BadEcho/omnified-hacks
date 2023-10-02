@@ -66,16 +66,22 @@ registersymbol(getActorValue)
 getActorValue:
     // Load the effective ActorValueInfo type.    
     push rbx
-    push rcx    
+    push rdx    
     mov rax,[rsp+28]
     mov rbx,[rax+B0]
     mov rax,[rbx]
     mov rbx,[rsp+20]
-    mov rcx,[rsp+18]
+    mov rdx,[rsp+18]
 nextActorValue:
     // Check if we're past the last ActorValueInfo entry.
-    cmp rbx,rcx
+    cmp rbx,rdx
     jg getActorValueExit
+    push rcx
+    lea rcx,[rbx]
+    call checkBadPointer
+    cmp rcx,0
+    pop rcx
+    jne getActorValueExit
     cmp rax,[rbx]    
     je readActorValue
     add rbx,10
@@ -83,7 +89,7 @@ nextActorValue:
 readActorValue:
     mov rax,[rbx+8]
 getActorValueExit:
-    pop rcx
+    pop rdx
     pop rbx
     ret 18
 
