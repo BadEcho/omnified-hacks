@@ -166,9 +166,39 @@ omniPlayerHook:
     nop 
 getPlayerReturn:
 
+// Gets the address to the container of the player ship's ActorValueInfo entries.
+// r15: ActorValueInfo property bag container (at [r15+18])
+// rax: Is 2 when r15 contains player ship ActorValueInfo values of interest.
+// UNIQUE AOB: 49 8B 5F 18 48 8D 0C 40 48 8D 04 CB 4C 8B 7C 24 30 0F
+define(omniShipVitalsKeyHook,"Starfield.exe"+24F1E48)
+
+assert(omniShipVitalsKeyHook,49 8B 5F 18 48 8D 0C 40)
+alloc(getShipVitalsKey,$1000,omniShipVitalsKeyHook)
+alloc(playerShipActorValuesKey,8)
+
+registersymbol(playerShipActorValuesKey)
+registersymbol(omniShipVitalsKeyHook)
+
+getShipVitalsKey:
+    pushf
+    cmp rax,2
+    jne getShipVitalsKeyOriginalCode
+    mov [playerShipActorValuesKey],r15
+getShipVitalsKeyOriginalCode:
+    popf
+    mov rbx,[r15+18]
+    lea rcx,[rax+rax*2]
+    jmp getShipVitalsKeyReturn
+
+omniShipVitalsKeyHook:
+    jmp getShipVitalsKey
+    nop 3
+getShipVitalsKeyReturn:
+
 
 // Gets updates to the player ship's vitals.
 // rbx: Current ship ActorValueInfo entry
+// rdi-0x20: Matches against playerShipActorValuesKey if the vitals belong to the player ship.
 // [rbx]: Identifying key
 // [rbx+10]: Value
 // [rsp+20] | {rsp+42}: Maximum value for vital.
@@ -198,6 +228,12 @@ getShipVitalsChange:
     movdqu [rsp],xmm0
     push rax
     push rcx
+    // Check if these vitals belongs to the player's ship (as opposed to an NPC's ship).
+    mov rcx,rdi
+    sub rcx,20
+    mov rax,playerShipActorValuesKey
+    cmp [rax],rcx
+    jne getShipVitalsChangeExit
     // Check if vital type is shield offset, otherwise check for hull offset.
     mov rax,actorValueKeyShield
     mov rcx,[rax]
@@ -1053,6 +1089,17 @@ dealloc(playerShipHullOffset)
 dealloc(playerShipShield)
 dealloc(playerShipShieldOffset)
 dealloc(getShipVitalsChange)
+
+
+// Cleanup of omniShipVitalsKeyHook
+omniShipVitalsKeyHook:
+    db 49 8B 5F 18 48 8D 0C 40
+
+unregistersymbol(omniShipVitalsKeyHook)
+unregistersymbol(playerShipActorValuesKey)
+
+dealloc(playerShipActorValuesKey)
+dealloc(getShipVitalsKey)
 
 
 // Cleanup of omniPlayerHook
