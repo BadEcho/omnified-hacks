@@ -197,15 +197,14 @@ getShipVitalsKeyReturn:
 
 
 // Gets updates to the player ship's vitals.
-// rbx: Current ship ActorValueInfo entry
-// rdi-0x20: Matches against playerShipActorValuesKey if the vitals belong to the player ship.
-// [rbx]: Identifying key
-// [rbx+10]: Value
-// [rsp+20] | {rsp+42}: Maximum value for vital.
-// UNIQUE AOB: C5 F2 58 73 10
-define(omniShipVitalsChangeHook,"Starfield.exe"+24F20CB)
+// rax: Matches against playerShipActorValuesKey if the vitals belong the player's ship.
+// rbx: Identifying key of the vital type.
+// [rax+10]: Number of ActorValueInfo entries.
+// [rax+18]: The ActorValueInfo entries of size 0x18.
+// xmm7: The maximum value for the vital being updated. Ignore if less than or equal to 1 and if not equal to xmm6.
+define(omniShipVitalsChangeHook,"Starfield.exe"+1A03DA6)
 
-assert(omniShipVitalsChangeHook,C5 F2 58 73 10)
+assert(omniShipVitalsChangeHook,48 83 C4 20 41 5F)
 alloc(getShipVitalsChange,$1000,omniShipVitalsChangeHook)
 alloc(playerShipShieldOffset,8)
 alloc(playerShipShield,8)
@@ -226,47 +225,89 @@ getShipVitalsChange:
     pushf
     sub rsp,10
     movdqu [rsp],xmm0
-    push rax
     push rcx
+    push rdx
+    // Will point to the symbol referencing the ActorValueInfo address containing the vital's offset.
+    push rsi
+    // Will point to the symbol referencing the maximum value for the vital type.
+    push rdi
+    // Will point to the symbol referencing a calculated display value for the vital type.
+    push r8
+    // Will contain the maximum ActorValueInfo address entry to check.
+    push r9
     // Check if these vitals belongs to the player's ship (as opposed to an NPC's ship).
-    mov rcx,rdi
-    sub rcx,20
-    mov rax,playerShipActorValuesKey
-    cmp [rax],rcx
+    mov rcx,playerShipActorValuesKey
+    cmp [rcx],rax
     jne getShipVitalsChangeExit
+    // We ignore all iterations where xmm7 doesn't value greater than 1.
+    mov ecx,0x3F800000
+    movd xmm0,ecx
+    ucomiss xmm7,xmm0
+    jbe getShipVitalsChangeExit
+    // We further ignore all iterations where xmm7 doesn't hold the same value as xmm6 
+    // (will result in bad data if the vital is at 100% and the ship is moving, for example).
+    ucomiss xmm7,xmm6
+    jne getShipVitalsChangeExit    
     // Check if vital type is shield offset, otherwise check for hull offset.
-    mov rax,actorValueKeyShield
-    mov rcx,[rax]
-    cmp [rbx],rcx
+    mov rcx,actorValueKeyShield
+    cmp rbx,[rcx]
     jne checkForShipHull
-    mov [playerShipShieldOffset],rbx
-    movss xmm0,[rsp+42]
-    movss [playerShipMaxShield],xmm0
-    addss xmm0,[rbx+10]
-    movss [playerShipShield],xmm0
-    jmp getShipVitalsChangeExit
+    mov rsi,playerShipShieldOffset
+    mov rdi,playerShipMaxShield
+    mov r8,playerShipShield
+    jmp searchForShipOffset
 checkForShipHull:
-    mov rax,actorValueKeys
-    mov rcx,[rax+108]
-    cmp [rbx],rcx
-    jne getShipVitalsChangeExit
-    mov [playerShipHullOffset],rbx
-    movss xmm0,[rsp+42]
-    movss [playerShipMaxHull],xmm0
-    addss xmm0,[rbx+10]
-    movss [playerShipHull],xmm0
+    mov rcx,actorValueKeys
+    cmp rbx,[rcx+108]
+    jne getShipVitalsChangeExit    
+    mov rsi,playerShipHullOffset
+    mov rdi,playerShipMaxHull
+    mov r8,playerShipHull
+searchForShipOffset:
+    // Find the maximum entry address before we abort our loop.
+    mov ecx,[rax+10]
+    imul ecx,18
+    mov r9,[rax+18]
+    add r9,ecx
+    mov rcx,[rax+18]
+nextShipActorValue:
+    cmp rcx,r9
+    jg shipVitalNotFound
+    cmp [rcx],rbx
+    je readShipVital
+    add rcx,18
+    jmp nextShipActorValue
+readShipVital:
+    mov [rsi],rcx
+    movss [rdi],xmm7
+    movss xmm0,[rcx+10]
+    addss xmm0,xmm7
+    movss [r8],xmm0
+    jmp getShipVitalsChangeExit
+shipVitalNotFound:
+    // If the ship's vital type is at 100%, there will be no ActorValueInfo entry for it.
+    // So, while we cannot point our offset symbol towards an ActorValueInfo address, we can
+    // still produce an accurate calculated display value.
+    movss [rdi],xmm7
+    movss [r8],xmm7
 getShipVitalsChangeExit:
+    pop r9
+    pop r8
+    pop rdi
+    pop rsi
+    pop rdx
     pop rcx
-    pop rax
     movdqu xmm0,[rsp]
     add rsp,10
 getShipVitalsChangeOriginalCode:
     popf
-    vaddss xmm6,xmm1,[rbx+10]
+    add rsp,20
+    pop r15
     jmp getShipVitalsChangeReturn
 
 omniShipVitalsChangeHook:
     jmp getShipVitalsChange
+    nop 
 getShipVitalsChangeReturn:
 
 
@@ -424,12 +465,21 @@ define(omniPlayerInShipHook,"Starfield.exe"+2D696AD)
 assert(omniPlayerInShipHook,C5 F8 11 83 80 00 00 00)
 alloc(isPlayerInShip,$1000,omniPlayerInShipHook)
 alloc(playerInShip,8)
+alloc(hidePlayerHealth,8)
+alloc(hidePlayerStamina,8)
+alloc(hidePlayerCoordinates,8)
 
+registersymbol(hidePlayerCoordinates)
+registersymbol(hidePlayerStamina)
+registersymbol(hidePlayerHealth)
 registersymbol(playerInShip)
 registersymbol(omniPlayerInShipHook)
 
 isPlayerInShip:
     mov [playerInShip],1
+    mov [hidePlayerHealth],1
+    mov [hidePlayerStamina],1
+    mov [hidePlayerCoordinates],1
 isPlayerInShipOriginalCode:
     vmovups [rbx+00000080],xmm0
     jmp isPlayerInShipReturn
@@ -465,6 +515,12 @@ isPlayerNotInShip:
     jne isPlayerNotInShipExit
     // We are not piloting da ship. No longer sitting on da cockpit seat.
     mov rax,playerInShip
+    mov [rax],0
+    mov rax,hidePlayerHealth
+    mov [rax],0
+    mov rax,hidePlayerStamina
+    mov [rax],0
+    mov rax,hidePlayerCoordinates
     mov [rax],0
 isPlayerNotInShipExit:
     pop rbx
@@ -1043,7 +1099,13 @@ omniPlayerInShipHook:
 
 unregistersymbol(omniPlayerInShipHook)
 unregistersymbol(playerInShip)
+unregistersymbol(hidePlayerHealth)
+unregistersymbol(hidePlayerStamina)
+unregistersymbol(hidePlayerCoordinates)
 
+dealloc(hidePlayerCoordinates)
+dealloc(hidePlayerStamina)
+dealloc(hidePlayerHealth)
 dealloc(playerInShip)
 dealloc(isPlayerInShip)
 
@@ -1072,7 +1134,7 @@ dealloc(getPlayerVitalsChange)
 
 // Cleanup of omniShipVitalsChangeHook
 omniShipVitalsChangeHook:
-    db C5 F2 58 73 10
+    db 48 83 C4 20 41 5F
 
 unregistersymbol(omniShipVitalsChangeHook)
 unregistersymbol(playerShipShieldOffset)
