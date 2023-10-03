@@ -24,6 +24,14 @@ function registerExports()
         local playerInShip = readInteger("playerInShip")
 
         if playerInShip == 1 then
+            local shipShield = toInt(readFloat("playerShipShield"))
+            local shipMaxShield = toInt(readFloat("playerShipMaxShield"))
+            local shipHull = toInt(readFloat("playerShipHull"))
+            local shipMaxHull = toInt(readFloat("playerShipMaxHull"))
+
+            table.insert(additionalStatisticsTable, FractionalStatistic("Ship Shield", shipShield, shipMaxShield, "#AA50717b", "#AA8ECCCC"))
+            table.insert(additionalStatisticsTable, FractionalStatistic("Ship Hull", shipHull, shipMaxHull, "#AAD6D0B8", "#AAF1F4C6"))
+
             local shipX = readFloat("[playerShipLocation]+0x80")
             local shipY = readFloat("[playerShipLocation]+0x84")
             local shipZ = readFloat("[playerShipLocation]+0x88")
