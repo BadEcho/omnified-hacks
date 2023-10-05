@@ -81,7 +81,12 @@ local function dumpStatistics()
                                     and true
                                     or false
         
-    local playerDamageX = toInt(readFloat("playerDamageX") * 100)
+    local playerDamageX = readFloat("playerDamageX")
+
+    if playerDamageX ~= nil then
+        playerDamageX = toInt(playerDamageX * 100)
+    end    
+    
     local playerSpeedX = readFloat("playerSpeedX")
 
     if playerSpeedX ~= nil then
