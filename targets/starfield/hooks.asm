@@ -773,9 +773,16 @@ initiateApocalypse:
     jne initiateApocalypseOriginalCode    
     sub rsp,10
     movdqu [rsp],xmm2
+    sub rsp,10
+    movdqu [rsp],xmm3
+    sub rsp,10
+    movdqu [rsp],xmm4
     push rax
     push rbx
     push rcx
+    // Back up the new and working health offsets in case we need to restore them due to an Apocalypse abortion.
+    movss xmm3,xmm0
+    movss xmm4,xmm7
     // Make the damage offset unsigned and then load it as the first common parameter.
     mov rcx,0x80000000
     movd xmm2,rcx
@@ -822,10 +829,17 @@ initiateApocalypseUpdateDamage:
 abortApocalypse:
     // Adjust the stack to account for the common parameters that weren't used.
     add rsp,10
+    // Restore the original health offset values.
+    movss xmm0,xmm3
+    movss xmm7,xmm4
 initiateApocalypseCleanup:
     pop rcx
     pop rbx
     pop rax
+    movdqu xmm4,[rsp]
+    add rsp,10
+    movdqu xmm3,[rsp]
+    add rsp,10
     movdqu xmm2,[rsp]
     add rsp,10
 initiateApocalypseOriginalCode:
