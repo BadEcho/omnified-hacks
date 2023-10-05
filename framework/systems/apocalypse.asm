@@ -75,8 +75,12 @@ alloc(totalDamageToPlayer,8)
 alloc(disableTeleportitis,8)
 alloc(disableMurder,8)
 alloc(murderIsAfoot,8)
-alloc(teleportitisCooldownPeriod,8)
+alloc(teleportitisCooldownMinutes,8)
+alloc(apocalypseInCooldown,8)
+alloc(apocalypseCooldownMilliseconds,8)
 
+registersymbol(apocalypseCooldownMilliseconds)
+registersymbol(apocalypseInCooldown)
 registersymbol(executePlayerApocalypse)
 registersymbol(logPlayerApocalypse)
 registersymbol(extraDamageSafetyThreshold)
@@ -111,7 +115,7 @@ registersymbol(coordinatesAreDoubles)
 registersymbol(disableTeleportitis)
 registersymbol(disableMurder)
 registersymbol(murderIsAfoot)
-registersymbol(teleportitisCooldownPeriod)
+registersymbol(teleportitisCooldownMinutes)
 
 executePlayerApocalypse:
     // Backing up a few SSE registers we'll be using to
@@ -168,12 +172,23 @@ checkFatalis:
     cmp [fatalisState],1
     je exitPlayerApocalypse
     cmp [fatalisState],2
-    jne applyApocalypseRoll
+    jne checkForCooldown
     // To make good on the Fatalis debuff, we set the damage equal to the health.
     movss xmm0,xmm3
     movss [fatalisHealthLost],xmm3
     inc [fatalisDeaths]
     jmp updatePlayerDamageStats
+checkForCooldown:
+    // If the Apocalypse system is in cooldown, something which will only happen if a target game has enabled the feature,
+    // we abort execution of the Apocalypse unless the base damage is enough to kill the player.
+    // The reason for this is because we want the death of the player to be reported in messaging, which will only happen if
+    // death happens from the result of an Apocalypse roll.
+    cmp [apocalypseInCooldown],1
+    jne applyApocalypseRoll
+    vsubss xmm1,xmm3,xmm0
+    xorps xmm2,xmm2
+    ucomiss xmm1,xmm2
+    ja exitPlayerApocalypse
 applyApocalypseRoll:
     // Load the parameters for generating the dice roll random number.
     push [apocalypseDieRollLower]
@@ -590,8 +605,14 @@ disableMurder:
 murderIsAfoot:
     dd 0
 
-teleportitisCooldownPeriod:
+teleportitisCooldownMinutes:
     dd 2
+
+apocalypseInCooldown:
+    dd 0
+
+apocalypseCooldownMilliseconds:
+    dd 0
   
 // Enemy Apocalypse System Function
 // [rsp+58]: Target health value
@@ -968,9 +989,13 @@ unregistersymbol(executePlayerApocalypse)
 unregistersymbol(disableTeleportitis)
 unregistersymbol(disableMurder)
 unregistersymbol(murderIsAfoot)
-unregistersymbol(teleportitisCooldownPeriod)
+unregistersymbol(teleportitisCooldownMinutes)
+unregistersymbol(apocalypseInCooldown)
+unregistersymbol(apocalypseCooldownMilliseconds)
 
-dealloc(teleportitisCooldownPeriod)
+dealloc(apocalypseCooldownMilliseconds)
+dealloc(apocalypseInCooldown)
+dealloc(teleportitisCooldownMinutes)
 dealloc(logPlayerApocalypse)
 dealloc(teleported)
 dealloc(teleportedX)

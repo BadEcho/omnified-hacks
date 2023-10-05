@@ -287,6 +287,27 @@ local function processApocalypseEvents()
         local playerApocalypseEvent = dumpPlayerApocalypseEvent()
         writeInteger("logPlayerApocalypse", 0) 
 
+        local cooldownMilliseconds = readInteger("apocalypseCooldownMilliseconds")
+        
+        if cooldownMilliseconds ~= 0 then
+            -- If a cooldown period between Apocalypse rolls is requested, we flag the system as being in cooldown
+            -- and then set up a timer to reenable it.
+            writeInteger("apocalypseInCooldown", 1)
+            
+            if apocalypseCooldownTimer == nil then
+                apocalypseCooldownTimer = createTimer(getMainForm())
+            end
+
+            apocalypseCooldownTimer.Interval = cooldownMilliseconds
+            apocalypseCooldownTimer.OnTimer = function()
+                writeInteger("apocalypseInCooldown", 0)
+
+                apocalypseCooldownTimer.Enabled = false
+                apocalypseCooldownTimer.Destroy()
+                apocalypseCooldownTimer = nil
+            end
+        end
+
         return playerApocalypseEvent
     end    
 

@@ -776,7 +776,7 @@ initiateApocalypse:
     push rax
     push rbx
     push rcx
-    // Make damage offset unsigned and then load it as the first common parameter.
+    // Make the damage offset unsigned and then load it as the first common parameter.
     mov rcx,0x80000000
     movd xmm2,rcx
     xorps xmm7,xmm2
@@ -848,12 +848,26 @@ verticalTeleportitisDisplacementX:
     dd (float)100.0
 
 // Since teleportitis is always hilariously fatal...10 min cooldown.
-teleportitisCooldownPeriod:
+teleportitisCooldownMinutes:
     dd 10
 
 // Falling underneath ground doesn't kill you (TYPICAL BETHESDA).
 negativeVerticalDisplacementEnabled:
     dd 0
+
+// Damage sustained by the player during combat is typically in the form of numerous tiny mosquito bites
+// (i.e., getting sprayed by automatic gunfire). A cooldown is implemented to avoid an otherwise excessively
+// noisy Apocalypse experience.
+apocalypseCooldownMilliseconds:
+    dd #500
+
+// On that note, given the prevalence of tiny damage being dealt to the player, we increase our damage modifiers
+// accordingly.
+extraDamageX:
+    dd (float)4.0
+
+murderDamageX:
+    dd (float)6969.0
 
 
 // Initiates the Predator system.

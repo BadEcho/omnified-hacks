@@ -326,7 +326,7 @@ fallDamageImmune:
 teleportitisDisplacementX:
     dd (float)4.0
 
-teleportitisCooldownPeriod:
+teleportitisCooldownMinutes:
     dd 5
 
 

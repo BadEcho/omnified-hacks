@@ -215,8 +215,8 @@ function registerOmnification(targetAssemblyFilePath, pathToFramework)
 				if teleportitisCooldownTimer == nil then
 					teleportitisCooldownTimer = createTimer(getMainForm())
 					
-					local cooldownPeriod = readInteger("teleportitisCooldownPeriod")
-					teleportitisCooldownTimer.Interval = cooldownPeriod * 60000
+					local cooldownMinutes = readInteger("teleportitisCooldownMinutes")
+					teleportitisCooldownTimer.Interval = cooldownMinutes * 60000
 					teleportitisCooldownTimer.OnTimer = function()
 						writeInteger("disableTeleportitis", 0)
 
