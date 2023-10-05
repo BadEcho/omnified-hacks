@@ -166,13 +166,56 @@ omniPlayerHook:
     nop 
 getPlayerReturn:
 
-// Gets the address to the container of the player ship's ActorValueInfo entries.
-// r15: ActorValueInfo property bag container (at [r15+18])
-// rax: Is 2 when r15 contains player ship ActorValueInfo values of interest.
-// UNIQUE AOB: 49 8B 5F 18 48 8D 0C 40 48 8D 04 CB 4C 8B 7C 24 30 0F
-define(omniShipVitalsKeyHook,"Starfield.exe"+24F1E48)
 
-assert(omniShipVitalsKeyHook,49 8B 5F 18 48 8D 0C 40)
+// Gets the identifier for the ExtraActorValueStorage type.
+// rax: Contains the type identifier for ExtraActorValuesStorage.
+aobscanmodule(omniExtraActorValueStorageTypeHook,Starfield.exe,48 89 5C 24 08 57 48 83 EC 20 48 8B F9 8B DA 48 83 C1 18 E8 ?? ?? ?? ?? F6 C3 01 ?? ?? BA 40 00 00 00 48 8B CF E8 ?? ?? ?? ?? 48 8B 5C 24 30 48 8B C7 48 83 C4 20 5F C3 48 89 5C 24 08 57 48 83 EC 20 8B DA)
+
+alloc(getExtraActorValueStorageType,$1000,omniExtraActorValueStorageTypeHook)
+alloc(extraActorValuesStorageType,8)
+
+registersymbol(extraActorValuesStorageType)
+registersymbol(omniExtraActorValueStorageTypeHook)
+
+getExtraActorValueStorageType:
+    mov [extraActorValuesStorageType],rax
+getExtraActorValueStorageTypeOriginalCode:
+    mov [rsp+08],rbx
+    jmp getExtraActorValueStorageTypeReturn
+
+omniExtraActorValueStorageTypeHook:
+    jmp getExtraActorValueStorageType
+getExtraActorValueStorageTypeReturn:
+
+
+// Gets the identifier for the ExtraPromotedRef type.
+// rax: Contains the type identifier for ExtraPromotedRef.
+aobscanmodule(omniExtraPromotedRefTypeHook,Starfield.exe,48 89 5C 24 08 57 48 83 EC 20 8B DA 48 8B F9 E8 ?? ?? ?? ?? F6 C3 01 ?? ?? BA 38 00 00 00 48 8B CF E8 ?? ?? ?? ?? 48 8B 5C 24 30 48 8B C7 48 83 C4 20 5F C3 48 89 5C 24 08 57 48 83 EC 20 8B DA 48 8B F9 E8 ?? ?? ?? ?? F6 C3 01 ?? ?? BA 20 00 00 00 48 8B CF E8 ?? ?? ?? ?? 48 8B 5C 24 30 48 8B C7 48 83 C4 20 5F C3 40 53)
+
+alloc(getExtraPromotedRefType,$1000,omniExtraPromotedRefTypeHook)
+alloc(extraPromotedRefType,8)
+
+registersymbol(extraPromotedRefType)
+registersymbol(omniExtraPromotedRefTypeHook)
+
+getExtraPromotedRefType:
+    mov [extraPromotedRefType],rax
+getExtraPromotedRefTypeOriginalCode:
+    mov [rsp+08],rbx
+    jmp getExtraPromotedRefTypeReturn
+
+omniExtraPromotedRefTypeHook:
+    jmp getExtraPromotedRefType
+getExtraPromotedRefTypeReturn:
+
+
+// Gets the address to the ActorValueInfo container for the player's ship.
+// rax: Needs to be the ExtraActorValueStorage type to be related to our ship.
+// Also, [rax+8] cannot be an ExtraPromotedRef.
+// Adjust rax by +18 to make it a working key to match against ship vital pollers.
+define(omniShipVitalsKeyHook,"Starfield.exe"+22E601E)
+
+assert(omniShipVitalsKeyHook,48 8B 40 08 48 85 C0)
 alloc(getShipVitalsKey,$1000,omniShipVitalsKeyHook)
 alloc(playerShipActorValuesKey,8)
 
@@ -181,18 +224,33 @@ registersymbol(omniShipVitalsKeyHook)
 
 getShipVitalsKey:
     pushf
-    cmp rax,2
-    jne getShipVitalsKeyOriginalCode
-    mov [playerShipActorValuesKey],r15
+    push rbx
+    push rcx
+    mov rbx,[rax]
+    mov rcx,extraActorValuesStorageType
+    cmp rbx,[rcx]
+    jne getShipVitalsKeyExit
+    mov rbx,[rax+8]
+    mov rcx,[rbx]
+    mov rbx,extraPromotedRefType
+    cmp rcx,[rbx]
+    je getShipVitalsKeyExit
+    push rax
+    add rax,18
+    mov [playerShipActorValuesKey],rax
+    pop rax  
+getShipVitalsKeyExit:
+    pop rcx
+    pop rbx
 getShipVitalsKeyOriginalCode:
     popf
-    mov rbx,[r15+18]
-    lea rcx,[rax+rax*2]
+    mov rax,[rax+08]
+    test rax,rax
     jmp getShipVitalsKeyReturn
 
 omniShipVitalsKeyHook:
     jmp getShipVitalsKey
-    nop 3
+    nop 2
 getShipVitalsKeyReturn:
 
 
@@ -1153,9 +1211,31 @@ dealloc(playerShipShieldOffset)
 dealloc(getShipVitalsChange)
 
 
+// Cleanup of omniExtraActorValueStorageTypeHook
+omniExtraActorValueStorageTypeHook:
+    db 48 89 5C 24 08
+
+unregistersymbol(omniExtraActorValueStorageTypeHook)
+unregistersymbol(extraActorValuesStorageType)
+
+dealloc(extraActorValuesStorageType)
+dealloc(getExtraActorValueStorageType)
+
+
+// Cleanup of omniExtraPromotedRefTypeHook
+omniExtraPromotedRefTypeHook:
+    db 48 89 5C 24 08
+
+unregistersymbol(omniExtraPromotedRefTypeHook)
+unregistersymbol(extraPromotedRefType)
+
+dealloc(extraPromotedRefType)
+dealloc(getExtraPromotedRefType)
+
+
 // Cleanup of omniShipVitalsKeyHook
 omniShipVitalsKeyHook:
-    db 49 8B 5F 18 48 8D 0C 40
+    db 48 8B 40 08 48 85 C0
 
 unregistersymbol(omniShipVitalsKeyHook)
 unregistersymbol(playerShipActorValuesKey)
