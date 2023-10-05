@@ -57,6 +57,14 @@ local function dumpStatistics()
                                 and toInt(readFloat(playerMaxStaminaAddress))
                                 or toInt(readInteger(playerMaxStaminaAddress))
 
+    local hidePlayerHealth = readInteger("hidePlayerHealth") == 1
+                                and true
+                                or false
+
+    local hidePlayerStamina = readInteger("hidePlayerStamina") == 1
+                                and true
+                                or false
+
     -- Last damaged enemy health is always floating point, as it is maintained by the Apocalypse system.
     local lastEnemyHealthValue = toInt(readFloat("lastEnemyHealthValue"))  
     local lastDamageToPlayer = toInt(readFloat("lastDamageToPlayer"))
@@ -68,6 +76,10 @@ local function dumpStatistics()
     local enemyDamagePulses = readInteger("enemyDamagePulses")
 
     local playerCoordinates = readPlayerCoordinates()
+
+    local hidePlayerCoordinates = readInteger("hidePlayerCoordinates") == 1
+                                    and true
+                                    or false
         
     local playerDamageX = toInt(readFloat("playerDamageX") * 100)
     local playerSpeedX = readFloat("playerSpeedX")
@@ -89,8 +101,8 @@ local function dumpStatistics()
     end
 
     local statistics = {
-        FractionalStatistic("Health", playerHealth, playerMaxHealth, "#AA43BC50", "#AA27D88D"),
-        FractionalStatistic("Stamina", playerStamina, playerMaxStamina, "#AA7515D9", "#AAB22DE5"),
+        FractionalStatistic("Health", playerHealth, playerMaxHealth, "#AA43BC50", "#AA27D88D", hidePlayerHealth),
+        FractionalStatistic("Stamina", playerStamina, playerMaxStamina, "#AA7515D9", "#AAB22DE5", hidePlayerStamina),
         WholeStatistic("Enemy Health", lastEnemyHealthValue),
         StatisticGroup("Damage Taken", { 
             WholeStatistic("Last", lastDamageToPlayer), 
@@ -103,7 +115,7 @@ local function dumpStatistics()
             WholeStatistic("Max", maxEnemyDamageEvent, true),
             WholeStatistic("Total", totalEnemyDamage)
         }),
-        CoordinateStatistic("Coordinates", playerCoordinates.X, playerCoordinates.Y, playerCoordinates.Z),
+        CoordinateStatistic("Coordinates", playerCoordinates.X, playerCoordinates.Y, playerCoordinates.Z, hidePlayerCoordinates),
         WholeStatistic("Player Damage", playerDamageX, false, "{0}%"),
         WholeStatistic("Player Speed", playerSpeedX, false, "{0}%"),
         WholeStatistic("Deaths", deathCounter)

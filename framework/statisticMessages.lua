@@ -33,7 +33,8 @@ function WholeStatistic(name, value, isCritical, format)
     return wholeStatistic
 end
 
-function FractionalStatistic(name, currentValue, maximumValue, primaryBarColor, secondaryBarColor)
+function FractionalStatistic(name, currentValue, maximumValue, primaryBarColor, secondaryBarColor, isHidden)
+    local isHidden = (isHidden == true)    
     local fractionalStatistic = {
         Type = StatisticType.Fractional,
         Statistic = {
@@ -41,14 +42,16 @@ function FractionalStatistic(name, currentValue, maximumValue, primaryBarColor, 
             CurrentValue = currentValue,
             MaximumValue = maximumValue,
             PrimaryBarColor = primaryBarColor,
-            SecondaryBarColor = secondaryBarColor
+            SecondaryBarColor = secondaryBarColor,
+            IsHidden = isHidden
         }
     }
 
     return fractionalStatistic
 end
 
-function CoordinateStatistic(name, x, y, z)
+function CoordinateStatistic(name, x, y, z, isHidden)
+    local isHidden = (isHidden == true)
     local coordinateStatistic = {
         Type = StatisticType.Coordinate,        
         Statistic = {
@@ -56,7 +59,8 @@ function CoordinateStatistic(name, x, y, z)
             Format = "{0:0.000}",
             X = x,
             Y = y,
-            Z = z
+            Z = z,
+            IsHidden = isHidden
         }
     }
 
