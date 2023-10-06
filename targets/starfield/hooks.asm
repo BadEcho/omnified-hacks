@@ -727,6 +727,77 @@ omniPlayerMagazineChangeHook:
 getPlayerMagazineChangeReturn:
 
 
+// Gets the player's equip load.
+// rcx: BGSInventoryList
+// [rcx+3C]: Equip load.
+// rbx: Entity that owns the inventory (PlayerCharacter if it is the players).
+// UNIQUE AOB: C5 F8 2E 41 3C 40
+define(omniPlayerEquipLoad,"Starfield.exe"+1A08928)
+
+assert(omniPlayerEquipLoad,C5 F8 2E 41 3C)
+alloc(getPlayerEquipLoad,$1000,omniPlayerEquipLoad)
+alloc(playerEquipLoad,8)
+
+registersymbol(playerEquipLoad)
+registersymbol(omniPlayerEquipLoad)
+
+getPlayerEquipLoad:
+    pushf
+    push rax
+    mov rax,player
+    cmp [rax],rbx
+    pop rax
+    jne getPlayerEquipLoadOriginalCode
+    push rax
+    mov rax,[rcx+3C]
+    mov [playerEquipLoad],rax
+    pop rax
+getPlayerEquipLoadOriginalCode:
+    popf
+    vucomiss xmm0,[rcx+3C]
+    jmp getPlayerEquipLoadReturn
+
+omniPlayerEquipLoad:
+    jmp getPlayerEquipLoad
+
+getPlayerEquipLoadReturn:
+
+
+// Gets the player's max equip load.
+// [rax+68] : Max equip load.
+// r8 == 0xD: Max equip load identifier.
+// r14: Associated entity, PlayerCharacter for the player's max equip load.
+// UNIQUE AOB: C4 A1 7A 10 34 C0
+define(omniPlayerMaxEquipLoad,"Starfield.exe"+24C300C)
+
+assert(omniPlayerMaxEquipLoad,C4 A1 7A 10 34 C0)
+alloc(getPlayerMaxEquipLoad,$1000,omniPlayerMaxEquipLoad)
+alloc(playerMaxEquipLoad,8)
+
+registersymbol(playerMaxEquipLoad)
+registersymbol(omniPlayerMaxEquipLoad)
+
+getPlayerMaxEquipLoad:
+    pushf
+    cmp r8,0xD
+    jne getPlayerMaxEquipLoadOriginalCode
+    push rax
+    mov rax,player
+    cmp [rax],r14
+    pop rax
+    jne getPlayerMaxEquipLoadOriginalCode
+    mov [playerMaxEquipLoad],rax
+getPlayerMaxEquipLoadOriginalCode:
+    popf
+    vmovss xmm6,[rax+r8*8]
+    jmp getPlayerMaxEquipLoadReturn
+
+omniPlayerMaxEquipLoad:
+    jmp getPlayerMaxEquipLoad
+    nop 
+getPlayerMaxEquipLoadReturn:
+
+
 // Initiates the Apocalypse system.
 // This code runs whenever any player/npc vital metric is being updated (health, oxygen, others unknown).
 // [rax+8]: Offset value being updated.
@@ -1126,6 +1197,28 @@ omnifyApocalypseHook:
 unregistersymbol(omnifyApocalypseHook)
 
 dealloc(initiateApocalypse)
+
+
+// Cleanup of omniPlayerMaxEquipLoad
+omniPlayerMaxEquipLoad:
+    db C4 A1 7A 10 34 C0
+
+unregistersymbol(omniPlayerMaxEquipLoad)
+unregistersymbol(playerMaxEquipLoad)
+
+dealloc(playerMaxEquipLoad)
+dealloc(getPlayerMaxEquipLoad)
+
+
+// Cleanup of omniPlayerEquipLoad
+omniPlayerEquipLoad:
+    db C5 F8 2E 41 3C
+
+unregistersymbol(omniPlayerEquipLoad)
+unregistersymbol(playerEquipLoad)
+
+dealloc(playerEquipLoad)
+dealloc(getPlayerEquipLoad)
 
 
 // Cleanup of omniPlayerMagazineChangeHook
