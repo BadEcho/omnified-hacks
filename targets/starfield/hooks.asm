@@ -122,7 +122,7 @@ getElderScrollsObjectReferenceTypeReturn:
 // In order to find ActorValueInfo values, search in [player+0x2A0], for specific key at [entry+0x0] every 16 bytes. Value is at matched [entry+0x8].
 // rcx: The player's root PlayerCharacter structure. Rarely, this is a TESObjectREFR, which we should ignore. 
 // UNIQUE AOB: 48 8B 01 48 8B FA 33 DB FF 90 E0
-define(omniPlayerHook,"Starfield.exe"+1A0903E)
+define(omniPlayerHook,"Starfield.exe"+1A0914E)
 
 assert(omniPlayerHook,48 8B 01 48 8B FA)
 alloc(getPlayer,$1000,omniPlayerHook)
@@ -242,8 +242,8 @@ getExtraPromotedRefTypeReturn:
 // rax: Needs to be the ExtraActorValueStorage type to be related to our ship.
 // Also, [rax+8] cannot be an ExtraPromotedRef.
 // Adjust rax by +18 to make it a working key to match against ship vital pollers.
-// UNIQUE AOB: 48 8B 40 08 48 85 C0 75 ?? 41 BE FF FF FF FF 48 85 DB 74 ?? 41 8B CE F0 0F C1 4B 04 8B C1 25 FF 0F C0 FF 83 F8 01 75 ?? F7 C1 00 F0 3F 00 74 ?? 48 8D 4B 04 ?? ?? ?? ?? ?? ?? 48 85 FF ?? ?? ?? ?? ?? ?? 48 8B 84 24 B8 00 00 00 48 8B A8 E0 00 00 00 48 85 ED ?? ?? ?? ?? ?? ?? 45 32 FF 0F BE 45 4F 83 C0 Fb 83 F8 05 ?? ?? ?? ?? ?? ?? 48 98 48 ?? ?? ?? ?? ?? ?? 8B 8C 82 DC 61 2E 02
-define(omniShipVitalsKeyHook,"Starfield.exe"+22E601E)
+// UNIQUE AOB: 48 8B 40 08 48 85 C0 75 ?? 41 BE FF FF FF FF 48 85 DB 74 ?? 41 8B CE F0 0F C1 4B 04 8B C1 25 FF 0F C0 FF 83 F8 01 75 ?? F7 C1 00 F0 3F 00 74 ?? 48 8D 4B 04 ?? ?? ?? ?? ?? ?? 48 85 FF ?? ?? ?? ?? ?? ?? 48 8B 84 24 B8 00 00 00 48 8B A8 E0 00 00 00 48 85 ED ?? ?? ?? ?? ?? ?? 45 32 FF 0F BE 45 4F 83 C0 Fb 83 F8 05 ?? ?? ?? ?? ?? ?? 48 98 48 ?? ?? ?? ?? ?? ?? 8B 8C 82 ?? ?? ?? ?? 48 03 CA FF E1 8B 4D 48 F6 C1 01 ?? ?? ?? ?? ?? ?? 48 8B 45 60 48 85 C0 ?? ?? ?? ?? ?? ?? 80 78 68 01 ?? ?? ?? ?? ?? ?? 0F BA E1 0F ?? ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 4C 8B A8 88 08 00 00 49 8B B5 38 02 00 00 48 89 74 24 40 48 8B CE 48 85 F6 74 11 B8 01 00 00 00 F0 0F C1 46 08 49 8B 8D 38 02 00 00 48 83 C1 10 E8 ?? ?? ?? ?? 48 8B D8 48 89 44 24 48 4C 89 6C 24 28 4C 8B CD 4C 8D 44 24 28 48 8D 94 24 B0 00 00 00 E8 ?? ?? ?? ?? 90 83 03 FF 75 ?? F0 44 0F C1 A6 1C 02 00 00 48 85 F6 74 ?? F0 44 0F C1 76 08 41 8D 46 FF 85 C0 75 ?? 48 8B 06 BA 01 00 00 00 48 8B CE FF 10 48 8B 8C 24 B0 00 00 00 48 85 C9 74 ?? 8B 41 28 0F BA E0 0B 72 ?? A8 20 75 ?? 0F B6 81 0A 01 00 00 90 84 C0 41 0F 95 C7 48 8B 8C 24 B0 00 00 00 48 C7 84 24 B0 00 00 00 00 00 00 00 48 85 C9 74 ?? E8 ?? ?? ?? ?? 45 84 FF 74 ?? 48 8D 4F 18 C5 FA 10 0D 38 ?? ?? ?? E8 ?? ?? ?? ?? 90
+define(omniShipVitalsKeyHook,"Starfield.exe"+22E63DE)
 
 assert(omniShipVitalsKeyHook,48 8B 40 08 48 85 C0)
 alloc(getShipVitalsKey,$1000,omniShipVitalsKeyHook)
@@ -291,7 +291,7 @@ getShipVitalsKeyReturn:
 // [rax+18]: The ActorValueInfo entries of size 0x18.
 // xmm7: The maximum value for the vital being updated. Ignore if less than or equal to 1 and if not equal to xmm6.
 // UNIQUE AOB: 48 83 C4 20 41 5F 41 5E 41 5C 5F 5E C3 CC 48 89 54 24 10 53 48 83 EC 30 48 8B DA
-define(omniShipVitalsChangeHook,"Starfield.exe"+1A03DA6)
+define(omniShipVitalsChangeHook,"Starfield.exe"+1A03EB6)
 
 assert(omniShipVitalsChangeHook,48 83 C4 20 41 5F)
 alloc(getShipVitalsChange,$1000,omniShipVitalsChangeHook)
@@ -408,7 +408,7 @@ getShipVitalsChangeReturn:
 // Because of this, our display values for the vitals, which we export as a statistic, also need to be updated here so that all 
 // changes are reported. 
 // UNIQUE AOB: C5 FA 11 0C 90 * * * * EB
-define(omniPlayerVitalsChangeHook,"Starfield.exe"+24BFE8D)
+define(omniPlayerVitalsChangeHook,"Starfield.exe"+24C024D)
 
 assert(omniPlayerVitalsChangeHook,C5 FA 11 0C 90)
 alloc(getPlayerVitalsChange,$1000,omniPlayerVitalsChangeHook)
@@ -490,7 +490,7 @@ deathCounter:
 // rax: Player location structure (+0x50).
 // The structure address is off by 0x50 (x-coordinate is normally at playerLocation+0x80), so adjustment is needed.
 // UNIQUE AOB: 0F 58 78 30 0F B7 C7
-define(omniPlayerLocationHook,"Starfield.exe"+C51F16)
+define(omniPlayerLocationHook,"Starfield.exe"+C52006)
 
 assert(omniPlayerLocationHook,0F 58 78 30 0F B7 C7)
 alloc(getPlayerLocation,$1000,omniPlayerLocationHook)
@@ -520,7 +520,7 @@ getPlayerLocationReturn:
 // Gets the player ship's location information.
 // rcx: The player ship's bhkCharProxyController. The hknpBSCharacterProxy (which contains the coords) can be found at [rcx+4D0].
 // UNIQUE AOB: 2A 48 8D 48 20 48 8B 01 48 8D 54 24 30
-define(omniPlayerShipLocationHook,"Starfield.exe"+1F8482B)
+define(omniPlayerShipLocationHook,"Starfield.exe"+1F8497B)
 
 assert(omniPlayerShipLocationHook,48 8B 01 48 8D 54 24 30)
 alloc(getPlayerShipLocation,$1000,omniPlayerShipLocationHook)
@@ -549,7 +549,7 @@ getPlayerShipLocationReturn:
 
 // Detects when the player is piloting their ship.
 // UNIQUE AOB: C5 F8 11 83 80 00 00 00 E8
-define(omniPlayerInShipHook,"Starfield.exe"+2D696AD)
+define(omniPlayerInShipHook,"Starfield.exe"+2D69AED)
 
 assert(omniPlayerInShipHook,C5 F8 11 83 80 00 00 00)
 alloc(isPlayerInShip,$1000,omniPlayerInShipHook)
@@ -582,7 +582,7 @@ isPlayerInShipReturn:
 // Detects when the player is no longer piloting their ship.
 // rax: x-coordinate member of character proxy being polled (adjust by -0x80 to normalize)
 // UNIQUE AOB: C5 F8 10 00 C4 C1 78 11 06 48 8B 03
-define(omniPlayerNotInShipHook,"Starfield.exe"+2D67D27)
+define(omniPlayerNotInShipHook,"Starfield.exe"+2D68167)
 
 assert(omniPlayerNotInShipHook,C5 F8 10 00 C4 C1 78 11 06)
 alloc(isPlayerNotInShip,$1000,omniPlayerNotInShipHook)
@@ -633,7 +633,7 @@ isPlayerNotInShipReturn:
 // [rbx+18]: Remaining number of bullets in the magazine.
 // r12: PlayerCharacter structure for entity that magazine belongs to.
 // UNIQUE AOB: 8B 7B 18 C5 F0 57 C9
-define(omniPlayerMagazineHook,"Starfield.exe"+1F25E0A)
+define(omniPlayerMagazineHook,"Starfield.exe"+1F25F2A)
 
 assert(omniPlayerMagazineHook,8B 7B 18 C5 F0 57 C9)
 alloc(getPlayerMagazine,$1000,omniPlayerMagazineHook)
@@ -673,7 +673,7 @@ getPlayerMagazineReturn:
 // r14: TESAmmo type
 // r9: Ammo amount
 // UNIQUE AOB: 41 8B C1 C3 CC CC CC CC CC 48
-define(omniPlayerAmmoHook,"Starfield.exe"+19C5BA7)
+define(omniPlayerAmmoHook,"Starfield.exe"+19C5CB7)
 
 assert(omniPlayerAmmoHook,41 8B C1 C3 CC)
 alloc(getPlayerAmmo,$1000,omniPlayerAmmoHook)
@@ -719,7 +719,7 @@ getPlayerAmmoReturn:
 // UNIQUE AOB: 89 71 18 48 8D 4C 24 20
 // rcx: Container undergoing change.
 // esi: New ammo count.
-define(omniPlayerMagazineChangeHook,"Starfield.exe"+1A1C136)
+define(omniPlayerMagazineChangeHook,"Starfield.exe"+1A1C246)
 
 assert(omniPlayerMagazineChangeHook,89 71 18 48 8D 4C 24 20)
 alloc(getPlayerMagazineChange,$1000,omniPlayerMagazineChangeHook)
@@ -763,7 +763,7 @@ getPlayerMagazineChangeReturn:
 // [rcx+3C]: Equip load.
 // rbx: Entity that owns the inventory (PlayerCharacter if it is the players).
 // UNIQUE AOB: C5 F8 2E 41 3C 40
-define(omniPlayerEquipLoad,"Starfield.exe"+1A08928)
+define(omniPlayerEquipLoad,"Starfield.exe"+1A08A38)
 
 assert(omniPlayerEquipLoad,C5 F8 2E 41 3C)
 alloc(getPlayerEquipLoad,$1000,omniPlayerEquipLoad)
@@ -799,7 +799,7 @@ getPlayerEquipLoadReturn:
 // r8 == 0xD: Max equip load identifier.
 // r14: Associated entity, PlayerCharacter for the player's max equip load.
 // UNIQUE AOB: C4 A1 7A 10 34 C0
-define(omniPlayerMaxEquipLoad,"Starfield.exe"+24C300C)
+define(omniPlayerMaxEquipLoad,"Starfield.exe"+24C33CC)
 
 assert(omniPlayerMaxEquipLoad,C4 A1 7A 10 34 C0)
 alloc(getPlayerMaxEquipLoad,$1000,omniPlayerMaxEquipLoad)
@@ -841,7 +841,7 @@ getPlayerMaxEquipLoadReturn:
 // rbx: Damage source (Either PlayerCharacter or Actor)
 // Filter out RBX==0x0 (environmental sourced).
 // UNIQUE AOB: C5 FA 58 D7 C5 FA 11 55 48
-define(omnifyApocalypseHook,"Starfield.exe"+24C45CD)
+define(omnifyApocalypseHook,"Starfield.exe"+24C498D)
 
 assert(omnifyApocalypseHook,C5 FA 58 D7 C5 FA 11 55 48)
 alloc(initiateApocalypse,$1000,omnifyApocalypseHook)
@@ -993,7 +993,7 @@ murderDamageX:
 // [rsi+10]: current x- and y-coordinates for NPC (double precision, again)
 // [rsi+20]: current z-offset for NPC
 // UNIQUE AOB: 66 0F 58 E1 66 0F 58 D0
-define(omnifyPredatorHook,"Starfield.exe"+1223DA4)
+define(omnifyPredatorHook,"Starfield.exe"+1223E94)
 
 assert(omnifyPredatorHook,66 0F 58 E1 66 0F 58 D0)
 alloc(initiatePredator,$1000,omnifyPredatorHook)
@@ -1076,7 +1076,7 @@ identityValue:
 // Manipulates the player's speed.
 // xmm0: The movement offsets.
 // UNIQUE AOB: 0F 58 83 80 00 00 00
-define(omnifyPlayerSpeedHook,"Starfield.exe"+C0801A)
+define(omnifyPlayerSpeedHook,"Starfield.exe"+C0810A)
 
 assert(omnifyPlayerSpeedHook,0F 58 83 80 00 00 00)
 alloc(applyPlayerSpeed,$1000,omnifyPlayerSpeedHook)
@@ -1119,7 +1119,7 @@ playerSpeedX:
 // UNIQUE AOB (more or less): C5 F2 59 63 7C C5 FA 10 55 E4 C5 EA 58 40 28
 // rsi: PlayerCharacter/Actor struct associated with the scale.
 // [rbx+7C]: Uniform scaling parameter.
-define(omnifyAbomnificationHook,"Starfield.exe"+1A044DC)
+define(omnifyAbomnificationHook,"Starfield.exe"+1A045EC)
 
 assert(omnifyAbomnificationHook,C5 F2 59 63 7C)
 alloc(initiateAbomnification,$1000,omnifyAbomnificationHook)
