@@ -17,8 +17,12 @@ function registerExports()
         local magazine = toInt(readInteger("[playerMagazine]+0x18"))
         local totalAmmo = toInt(readInteger("playerAmmo"))
 
+        local equipLoad = toInt(readFloat("playerEquipLoad"))
+        local maxEquipLoad = toInt(readFloat("[playerMaxEquipLoad]+0x68"))
+
         local additionalStatisticsTable = {
-            FractionalStatistic("Ammo", magazine, totalAmmo, "#00000000", "#00000000")
+            FractionalStatistic("Ammo", magazine, totalAmmo, "#00000000", "#00000000"),
+            FractionalStatistic("Equip Load", equipLoad, maxEquipLoad, "#AAb589ef", "#AAabf2fb")
         }
 
         local playerInShip = readInteger("playerInShip")
