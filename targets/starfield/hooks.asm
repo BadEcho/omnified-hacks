@@ -94,11 +94,33 @@ getActorValueExit:
     ret 18
 
 
+// Gets the identifier for the TESObjectREFR type.
+// rax: Contains the type identifier for TESObjectREFR.
+aobscanmodule(omniElderScrollsObjectReferenceTypeHook,Starfield.exe,48 89 5C 24 08 57 48 83 EC 20 8B FA 48 8B D9 E8 ?? ?? ?? ?? 40 F6 C7 01 74 ?? 48 8B CB 40 F6 C7 04 75 ?? E8 ?? ?? ?? ?? EB ?? BA 10 01 00 00 E8 ?? ?? ?? ?? 48 8B C3 48 8B 5C 24 30 48 83 C4 20 5F C3 CC CC 48 89 5C 24 08)
+
+alloc(getElderScrollsObjectReferenceType,$1000,omniElderScrollsObjectReferenceTypeHook)
+alloc(elderScrollsObjectReferenceType,8)
+
+registersymbol(elderScrollsObjectReferenceType)
+registersymbol(omniElderScrollsObjectReferenceTypeHook)
+
+getElderScrollsObjectReferenceType:
+    mov [elderScrollsObjectReferenceType],rax
+getElderScrollsObjectReferenceTypeOriginalCode:
+    mov [rsp+08],rbx
+    jmp getElderScrollsObjectReferenceTypeReturn
+
+omniElderScrollsObjectReferenceTypeHook:
+    jmp getElderScrollsObjectReferenceType
+getElderScrollsObjectReferenceTypeReturn:
+
+
 // Gets the player's root structure.
 // Effective health is located at [player]+0x3B8 -- it is stored as an offset (seems to be either 0 or a negative value, which you add to the maximum health to get your health).
 // Effective oxygen is located at [player]+0x3C4 -- also an offset.
 // Maximum health is an ActorValueInfo property whose key value can be found at [[actorValueKeys+0x108]+0xB0]+x0]
 // In order to find ActorValueInfo values, search in [player+0x2A0], for specific key at [entry+0x0] every 16 bytes. Value is at matched [entry+0x8].
+// rcx: The player's root PlayerCharacter structure. Rarely, this is a TESObjectREFR, which we should ignore. 
 // UNIQUE AOB: 48 8B 01 48 8B FA 33 DB FF 90 E0
 define(omniPlayerHook,"Starfield.exe"+1A0903E)
 
@@ -124,6 +146,12 @@ getPlayer:
     push rax
     push rbx
     push rdx
+    // Mapping a symbol to the PlayerCharacter type identifier has proven tricky, however we have been able to map a symbol to TESObjectREFR.
+    // So we check if the object is a TESObjectREFR, and abort if it is.
+    mov rax,elderScrollsObjectReferenceType
+    mov rbx,[rcx]
+    cmp [rax],rbx
+    je getPlayerExit
     mov [player],rcx        
     // Calculate the max ActorValueInfo entry address to check based on the number of entries stored at [player+0x298].
     mov eax,[rcx+298]
@@ -150,6 +178,7 @@ getPlayer:
     movss xmm0,[rcx+3C4]
     addss xmm0,[playerMaxOxygen]
     movss [playerOxygen],xmm0
+getPlayerExit:
     pop rdx
     pop rbx
     pop rax
@@ -213,6 +242,7 @@ getExtraPromotedRefTypeReturn:
 // rax: Needs to be the ExtraActorValueStorage type to be related to our ship.
 // Also, [rax+8] cannot be an ExtraPromotedRef.
 // Adjust rax by +18 to make it a working key to match against ship vital pollers.
+// UNIQUE AOB: 48 8B 40 08 48 85 C0 75 ?? 41 BE FF FF FF FF 48 85 DB 74 ?? 41 8B CE F0 0F C1 4B 04 8B C1 25 FF 0F C0 FF 83 F8 01 75 ?? F7 C1 00 F0 3F 00 74 ?? 48 8D 4B 04 ?? ?? ?? ?? ?? ?? 48 85 FF ?? ?? ?? ?? ?? ?? 48 8B 84 24 B8 00 00 00 48 8B A8 E0 00 00 00 48 85 ED ?? ?? ?? ?? ?? ?? 45 32 FF 0F BE 45 4F 83 C0 Fb 83 F8 05 ?? ?? ?? ?? ?? ?? 48 98 48 ?? ?? ?? ?? ?? ?? 8B 8C 82 DC 61 2E 02
 define(omniShipVitalsKeyHook,"Starfield.exe"+22E601E)
 
 assert(omniShipVitalsKeyHook,48 8B 40 08 48 85 C0)
@@ -260,6 +290,7 @@ getShipVitalsKeyReturn:
 // [rax+10]: Number of ActorValueInfo entries.
 // [rax+18]: The ActorValueInfo entries of size 0x18.
 // xmm7: The maximum value for the vital being updated. Ignore if less than or equal to 1 and if not equal to xmm6.
+// UNIQUE AOB: 48 83 C4 20 41 5F 41 5E 41 5C 5F 5E C3 CC 48 89 54 24 10 53 48 83 EC 30 48 8B DA
 define(omniShipVitalsChangeHook,"Starfield.exe"+1A03DA6)
 
 assert(omniShipVitalsChangeHook,48 83 C4 20 41 5F)
@@ -961,6 +992,7 @@ murderDamageX:
 // xmm0: z-offset
 // [rsi+10]: current x- and y-coordinates for NPC (double precision, again)
 // [rsi+20]: current z-offset for NPC
+// UNIQUE AOB: 66 0F 58 E1 66 0F 58 D0
 define(omnifyPredatorHook,"Starfield.exe"+1223DA4)
 
 assert(omnifyPredatorHook,66 0F 58 E1 66 0F 58 D0)
@@ -1084,7 +1116,7 @@ playerSpeedX:
 
 
 // Initiates (and applies) the Abomnification system.
-// UNIQUE AOB (more or less): 8B 48 20 89 4D E8 C5 FA 10 45 E8 C5 FA 58 48 2C
+// UNIQUE AOB (more or less): C5 F2 59 63 7C C5 FA 10 55 E4 C5 EA 58 40 28
 // rsi: PlayerCharacter/Actor struct associated with the scale.
 // [rbx+7C]: Uniform scaling parameter.
 define(omnifyAbomnificationHook,"Starfield.exe"+1A044DC)
@@ -1382,6 +1414,17 @@ dealloc(playerMaxOxygen)
 dealloc(playerMaxHealth)
 dealloc(player)
 dealloc(getPlayer)
+
+
+// Cleanup of omniElderScrollsObjectReferenceTypeHook
+omniElderScrollsObjectReferenceTypeHook:
+    db 48 89 5C 24 08
+
+unregistersymbol(omniElderScrollsObjectReferenceTypeHook)
+unregistersymbol(elderScrollsObjectReferenceType)
+
+dealloc(elderScrollsObjectReferenceType)
+dealloc(getElderScrollsObjectReferenceType)
 
 
 // Cleanup of getActorValue
