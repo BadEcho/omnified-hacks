@@ -795,13 +795,13 @@ getPlayerEquipLoadReturn:
 
 
 // Gets the player's max equip load.
-// [rax+68] : Max equip load.
-// r8 == 0xD: Max equip load identifier.
-// r14: Associated entity, PlayerCharacter for the player's max equip load.
-// UNIQUE AOB: C4 A1 7A 10 34 C0
-define(omniPlayerMaxEquipLoad,"Starfield.exe"+24C33CC)
+// rcx - rax: 0x20 when UI value is max equip load.
+// rsi: 0x5 when UI value is max equip load.
+// [rcx+18]: UI value.
+// UNIQUE AOB: 48 8B FA 48 8B D9 E8 23 0C
+define(omniPlayerMaxEquipLoad,"Starfield.exe"+13D7A9A)
 
-assert(omniPlayerMaxEquipLoad,C4 A1 7A 10 34 C0)
+assert(omniPlayerMaxEquipLoad,48 8B FA 48 8B D9)
 alloc(getPlayerMaxEquipLoad,$1000,omniPlayerMaxEquipLoad)
 alloc(playerMaxEquipLoad,8)
 
@@ -810,17 +810,21 @@ registersymbol(omniPlayerMaxEquipLoad)
 
 getPlayerMaxEquipLoad:
     pushf
-    cmp r8,0xD
+    push rcx
+    sub rcx,rax
+    cmp ecx,0x20
+    pop rcx
     jne getPlayerMaxEquipLoadOriginalCode
-    push rax
-    mov rax,player
-    cmp [rax],r14
-    pop rax
+    cmp rsi,0x5
     jne getPlayerMaxEquipLoadOriginalCode
-    mov [playerMaxEquipLoad],rax
+    push rbx
+    mov rbx,[rcx+18]
+    mov [playerMaxEquipLoad],rbx
+    pop rbx
 getPlayerMaxEquipLoadOriginalCode:
     popf
-    vmovss xmm6,[rax+r8*8]
+    mov rdi,rdx
+    mov rbx,rcx
     jmp getPlayerMaxEquipLoadReturn
 
 omniPlayerMaxEquipLoad:
@@ -1233,7 +1237,7 @@ dealloc(initiateApocalypse)
 
 // Cleanup of omniPlayerMaxEquipLoad
 omniPlayerMaxEquipLoad:
-    db C4 A1 7A 10 34 C0
+    db 48 8B FA 48 8B D9
 
 unregistersymbol(omniPlayerMaxEquipLoad)
 unregistersymbol(playerMaxEquipLoad)
