@@ -18,30 +18,26 @@ function registerExports()
         local totalAmmo = toInt(readInteger("playerAmmo"))
 
         local equipLoad = toInt(readFloat("playerEquipLoad"))
-        local maxEquipLoad = toInt(readFloat("[playerMaxEquipLoad]+0x68"))
+        local maxEquipLoad = toInt(readFloat("playerMaxEquipLoad"))
+        local shipShield = toInt(readFloat("playerShipShield"))
+        local shipMaxShield = toInt(readFloat("playerShipMaxShield"))
+        local shipHull = toInt(readFloat("playerShipHull"))
+        local shipMaxHull = toInt(readFloat("playerShipMaxHull"))
+        
+        local shipX = readFloat("[playerShipLocation]+0x80")
+        local shipY = readFloat("[playerShipLocation]+0x84")
+        local shipZ = readFloat("[playerShipLocation]+0x88")
+
+        local playerInShip = readInteger("playerInShip")
+        local shipStatsHidden = playerInShip ~= 1        
 
         local additionalStatisticsTable = {
+            FractionalStatistic("Ship Shield", shipShield, shipMaxShield, "#AA50717b", "#AA8ECCCC", shipStatsHidden),
+            FractionalStatistic("Ship Hull", shipHull, shipMaxHull, "#AAD6D0B8", "#AAF1F4C6", shipStatsHidden),
+            CoordinateStatistic("Ship", shipX, shipY, shipZ, shipStatsHidden),
             FractionalStatistic("Ammo", magazine, totalAmmo, "#00000000", "#00000000"),
             FractionalStatistic("Equip Load", equipLoad, maxEquipLoad, "#AAb589ef", "#AAabf2fb")
         }
-
-        local playerInShip = readInteger("playerInShip")
-
-        if playerInShip == 1 then
-            local shipShield = toInt(readFloat("playerShipShield"))
-            local shipMaxShield = toInt(readFloat("playerShipMaxShield"))
-            local shipHull = toInt(readFloat("playerShipHull"))
-            local shipMaxHull = toInt(readFloat("playerShipMaxHull"))
-
-            table.insert(additionalStatisticsTable, FractionalStatistic("Ship Shield", shipShield, shipMaxShield, "#AA50717b", "#AA8ECCCC"))
-            table.insert(additionalStatisticsTable, FractionalStatistic("Ship Hull", shipHull, shipMaxHull, "#AAD6D0B8", "#AAF1F4C6"))
-
-            local shipX = readFloat("[playerShipLocation]+0x80")
-            local shipY = readFloat("[playerShipLocation]+0x84")
-            local shipZ = readFloat("[playerShipLocation]+0x88")
-
-            table.insert(additionalStatisticsTable, CoordinateStatistic("Ship", shipX, shipY, shipZ))
-        end
 
         return additionalStatisticsTable
     end
