@@ -28,6 +28,10 @@ function registerExports()
         local shipY = readFloat("[playerShipLocation]+0x84")
         local shipZ = readFloat("[playerShipLocation]+0x88")
 
+        if shipX ~= nil and shipX > 100000 then shipX = 0 end
+        if shipY ~= nil and shipY > 100000 then shipY = 0 end
+        if shipZ ~= nil and shipZ > 100000 then  shipZ = 0 end        
+
         local playerInShip = readInteger("playerInShip")
         local shipStatsHidden = playerInShip ~= 1        
 
