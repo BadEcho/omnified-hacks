@@ -138,7 +138,9 @@ alloc(playerHealth,8)
 alloc(playerMaxHealth,8)
 alloc(playerMaxOxygen,8)
 alloc(playerOxygen,8)
+alloc(playerMaxEquipLoad,8)
 
+registersymbol(playerMaxEquipLoad)
 registersymbol(playerOxygen)
 registersymbol(playerMaxOxygen) 
 registersymbol(playerHealth)
@@ -184,6 +186,12 @@ getPlayer:
     movss xmm0,[rcx+3A4]
     addss xmm0,[playerMaxOxygen]
     movss [playerOxygen],xmm0
+    // Create a pointer to the player's max equip load.
+    mov rbx,[rcx+240]
+    mov rdx,[rbx+58]
+    mov rbx,[rdx+40]
+    // playerMaxEquipLoad value will be at [rbx+68]
+    mov [playerMaxEquipLoad],rbx
 getPlayerExit:
     pop rdx
     pop rbx
@@ -809,9 +817,9 @@ define(omniPlayerMaxEquipLoad,"Starfield.exe"+13D90BA)
 
 assert(omniPlayerMaxEquipLoad,48 8B FA 48 8B D9)
 alloc(getPlayerMaxEquipLoad,$1000,omniPlayerMaxEquipLoad)
-alloc(playerMaxEquipLoad,8)
+alloc(playerTotalMaxEquipLoad,8)
 
-registersymbol(playerMaxEquipLoad)
+registersymbol(playerTotalMaxEquipLoad)
 registersymbol(omniPlayerMaxEquipLoad)
 
 getPlayerMaxEquipLoad:
@@ -825,7 +833,7 @@ getPlayerMaxEquipLoad:
     jne getPlayerMaxEquipLoadOriginalCode
     push rbx
     mov rbx,[rcx+18]
-    mov [playerMaxEquipLoad],rbx
+    mov [playerTotalMaxEquipLoad],rbx
     pop rbx
 getPlayerMaxEquipLoadOriginalCode:
     popf
@@ -1253,9 +1261,9 @@ omniPlayerMaxEquipLoad:
     db 48 8B FA 48 8B D9
 
 unregistersymbol(omniPlayerMaxEquipLoad)
-unregistersymbol(playerMaxEquipLoad)
+unregistersymbol(playerTotalMaxEquipLoad)
 
-dealloc(playerMaxEquipLoad)
+dealloc(playerTotalMaxEquipLoad)
 dealloc(getPlayerMaxEquipLoad)
 
 
@@ -1424,7 +1432,9 @@ unregistersymbol(playerMaxHealth)
 unregistersymbol(playerMaxOxygen)
 unregistersymbol(playerHealth)
 unregistersymbol(playerOxygen)
+unregistersymbol(playerMaxEquipLoad)
 
+dealloc(playerMaxEquipLoad)
 dealloc(playerOxygen)
 dealloc(playerHealth)
 dealloc(playerMaxOxygen)

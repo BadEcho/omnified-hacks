@@ -18,7 +18,7 @@ function registerExports()
         local totalAmmo = toInt(readInteger("playerAmmo"))
 
         local equipLoad = toInt(readFloat("playerEquipLoad"))
-        local maxEquipLoad = toInt(readFloat("playerMaxEquipLoad"))
+        local maxEquipLoad = toInt(readFloat("playerTotalMaxEquipLoad"))
         local shipShield = toInt(readFloat("playerShipShield"))
         local shipMaxShield = toInt(readFloat("playerShipMaxShield"))
         local shipHull = toInt(readFloat("playerShipHull"))
