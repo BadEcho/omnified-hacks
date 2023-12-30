@@ -74,7 +74,9 @@ alloc(overrideMorphStepsValue,8)
 alloc(disableAbomnification,8)
 alloc(defaultScaleX,8)
 alloc(forceStaticUnnatural,8)
+alloc(thresholdDivisor,8)
 
+registersymbol(thresholdDivisor)
 registersymbol(forceStaticUnnatural)
 registersymbol(executeAbomnification)
 registersymbol(abomnifyMorphStepsResultUpper)
@@ -216,14 +218,21 @@ generateMonsterMorphTargets:
     // multipliers ahead of time.
     sub rsp,10
     movdqu [rsp],xmm1
+    sub rsp,10
+    movdqu [rsp],xmm2
     // Smallify the morph target lower extremum.    
     cvtsi2ss xmm1,rbx
     mulss xmm1,[unnaturalSmallX]
     cvtss2si rbx,xmm1
     // Biggify the morph target upper extremum.
-    cvtsi2ss xmm1,rcx
-    mulss xmm1,[unnaturalBigX]
-    cvtss2si rcx,xmm1
+    cvtsi2ss xmm2,rcx
+    mulss xmm2,[unnaturalBigX]
+    cvtss2si rcx,xmm2
+    addss xmm2,xmm1
+    divss xmm2,[thresholdDivisor]
+    movss [unnaturalBigThreshold],xmm2
+    movdqu xmm2,[rsp]
+    add rsp,10
     movdqu xmm1,[rsp]
     add rsp,10
 rollMorphTargets:    
@@ -420,6 +429,9 @@ disableAbomnification:
   
 defaultScaleX:
     dd (float)1.0
+
+thresholdDivisor:
+    dd (float)2.0
   
   
 // Retrieves the Abomnified scale multipliers for the entity identified.
@@ -510,7 +522,9 @@ unregistersymbol(overrideMorphStepsValue)
 unregistersymbol(disableAbomnification)
 unregistersymbol(defaultScaleX)
 unregistersymbol(forceStaticUnnatural)
+unregistersymbol(thresholdDivisor)
 
+dealloc(thresholdDivisor)
 dealloc(forceStaticUnnatural)
 dealloc(defaultScaleX)
 dealloc(stopMorphs)
