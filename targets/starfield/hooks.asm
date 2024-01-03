@@ -1,7 +1,7 @@
 //----------------------------------------------------------------------
 // Hooks for Omnified Starfield
 // Written By: Matt Weber (https://badecho.com) (https://twitch.tv/omni)
-// Copyright 2023 Bad Echo LLC
+// Copyright 2024 Bad Echo LLC
 //
 // Bad Echo Technologies are licensed under a
 // GNU Affero General Public License v3.0.
