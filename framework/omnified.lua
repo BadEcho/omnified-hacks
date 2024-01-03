@@ -13,6 +13,29 @@
 require("defines")
 require("utility")
 
+function validateCoordinates(x, y, z)
+	local minCoordinateValue = 0.001
+	local maxCoordinateValue = 100000
+
+	-- Check if NaN.
+	if x ~= x then x = 0 end
+	if y ~= y then y = 0 end
+	if z ~= z then z = 0 end
+
+	if (areNotNil(x,y,z)) then
+		-- Check if memory is potentially invalid (will result in very large/small values).
+		local absoluteX = math.abs(x)
+		local absoluteY = math.abs(y)
+		local absoluteZ = math.abs(z)
+
+		if absoluteX < minCoordinateValue or absoluteX > maxCoordinateValue then x = 0 end
+		if absoluteY < minCoordinateValue or absoluteY > maxCoordinateValue then y = 0 end
+		if absoluteZ < minCoordinateValue or absoluteZ > maxCoordinateValue then z = 0 end	
+	end
+
+	return {X = x, Y = y, Z = z	}
+end
+
 function readPlayerCoordinates()
 	local x = not coordinatesAreDoubles 
 				and readFloat(playerCoordinatesXAddress) 
@@ -24,15 +47,9 @@ function readPlayerCoordinates()
 
 	local z = not coordinatesAreDoubles 
 				and readFloat(playerCoordinatesZAddress) 
-				or readDouble(playerCoordinatesZAddress)
+				or readDouble(playerCoordinatesZAddress)	
 
-	if x ~= x then x = 0 end
-	if y ~= y then y = 0 end
-	if z ~= z then z = 0 end
-
-	local coordinates = { X = x, Y = y,	Z = z }
-
-	return coordinates
+	return validateCoordinates(x,y,z)
 end
 
 local function mark()

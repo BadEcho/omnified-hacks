@@ -27,10 +27,7 @@ function registerExports()
         local shipX = readFloat("[playerShipLocation]+0x80")
         local shipY = readFloat("[playerShipLocation]+0x84")
         local shipZ = readFloat("[playerShipLocation]+0x88")
-
-        if shipX ~= nil and shipX > 100000 then shipX = 0 end
-        if shipY ~= nil and shipY > 100000 then shipY = 0 end
-        if shipZ ~= nil and shipZ > 100000 then  shipZ = 0 end        
+        local shipCoordinates = validateCoordinates(shipX, shipY, shipZ)
 
         local playerInShip = readInteger("playerInShip")
         local shipStatsHidden = playerInShip ~= 1        
@@ -38,7 +35,7 @@ function registerExports()
         local additionalStatisticsTable = {
             FractionalStatistic("Ship Shield", shipShield, shipMaxShield, "#AA50717b", "#AA8ECCCC", shipStatsHidden),
             FractionalStatistic("Ship Hull", shipHull, shipMaxHull, "#AAD6D0B8", "#AAF1F4C6", shipStatsHidden),
-            CoordinateStatistic("Ship", shipX, shipY, shipZ, shipStatsHidden),
+            CoordinateStatistic("Ship", shipCoordinates.X, shipCoordinates.Y, shipCoordinates.Z, shipStatsHidden),
             FractionalStatistic("Ammo", magazine, totalAmmo, "#00000000", "#00000000"),
             FractionalStatistic("Equip Load", equipLoad, maxEquipLoad, "#AAb589ef", "#AAabf2fb")
         }
